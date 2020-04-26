@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
+	kafkaStore "github.com/MarkusAzer/products-service/lib/kafka"
 	"github.com/MarkusAzer/products-service/pkg/middleware"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -16,6 +18,10 @@ func check(err error) {
 }
 
 func main() {
+	client, err := kafkaStore.NewKafkaClient()
+	check(err)
+
+	fmt.Printf("Kafka Client Created %v\n", client)
 	r := mux.NewRouter()
 
 	//Middlewares
