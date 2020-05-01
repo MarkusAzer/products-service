@@ -16,14 +16,30 @@ type Client struct {
 func NewKafkaClient() (*Client, error) {
 
 	var client *Client
-	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "host1:9095,host2:9096,host3:9097"})
-	c, err := kafka.NewConsumer(&kafka.ConfigMap{"bootstrap.servers": "host1:9095,host2:9096,host3:9097", "group.id": "products-consumer"})
+	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "localhost:9095,localhost:9096,localhost:9097"})
+	c, err := kafka.NewConsumer(&kafka.ConfigMap{"bootstrap.servers": "localhost:9095,localhost:9096,localhost:9097", "group.id": "products-consumer"})
 	if err != nil {
 		return nil, err
 	}
 
 	fmt.Printf("Created Producer %v\n", p)
 	fmt.Printf("Created Consumer %v\n", c)
+
+	// defer p.Close()
+
+	// Delivery report handler for produced messages
+	go func() {
+		for e := range p.Events() {
+			switch ev := e.(type) {
+			case *kafka.Message:
+				if ev.TopicPartition.Error != nil {
+					fmt.Printf("Delivery failed: %v\n", ev.TopicPartition)
+				} else {
+					fmt.Printf("Delivered message to %v\n", ev.TopicPartition)
+				}
+			}
+		}
+	}()
 
 	client = new(Client)
 	client.Producer = p
