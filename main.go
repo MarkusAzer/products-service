@@ -9,7 +9,10 @@ import (
 
 	kafkaStore "github.com/MarkusAzer/products-service/lib/kafka"
 	"github.com/MarkusAzer/products-service/lib/mongodb"
+	"github.com/MarkusAzer/products-service/pkg/brand"
+	"github.com/MarkusAzer/products-service/pkg/handler"
 	"github.com/MarkusAzer/products-service/pkg/middleware"
+	"github.com/MarkusAzer/products-service/pkg/product"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
@@ -31,6 +34,14 @@ func main() {
 	fmt.Printf("Mongo Client Created %v\n", mongoDatastore)
 	r := mux.NewRouter()
 
+	productStoreRepo := product.NewMongoRepository(mongoDatastore.Db)
+	productMsgRepo := product.NewKafkaRepository(client.Producer)
+	productService := product.NewService(productMsgRepo, productStoreRepo)
+
+	brandStoreRepo := brand.NewMongoRepository(mongoDatastore.Db)
+	brandMsgRepo := brand.NewKafkaRepository(client.Consumer)
+	brandService := brand.NewService(brandStoreRepo)
+
 	//Middlewares
 	r.Use(middleware.Logging)
 	r.Use(handlers.CORS())
@@ -40,6 +51,10 @@ func main() {
 	r.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+
+	// Route Handlers - Endpoints
+	handler.MakeProductHandlers(r, productService)
+	handler.MakeBrandHandlers(brandMsgRepo, brandService)
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
