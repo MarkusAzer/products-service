@@ -3,7 +3,7 @@ package entity
 import (
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/google/uuid"
 )
 
 //ID Type
@@ -14,7 +14,8 @@ type Time time.Time
 
 //NewID create a new id
 func NewID() ID {
-	return ID(primitive.NewObjectID().Hex())
+	id := uuid.New()
+	return ID(id.String())
 }
 
 //TimeNow create Time Now
