@@ -45,7 +45,7 @@ func main() {
 	//Middlewares
 	r.Use(middleware.Logging)
 	r.Use(handlers.CORS())
-	r.Use(middleware.SetHeaderJSON)
+	r.Use(middleware.ValidateHeaderType)
 
 	http.Handle("/", r)
 	r.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
