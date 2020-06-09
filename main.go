@@ -36,10 +36,11 @@ func main() {
 
 	productStoreRepo := product.NewMongoRepository(mongoDatastore.Db)
 	productMsgRepo := product.NewKafkaRepository(client.Producer)
-	productService := product.NewService(productMsgRepo, productStoreRepo)
 
 	brandStoreRepo := brand.NewMongoRepository(mongoDatastore.Db)
 	brandMsgRepo := brand.NewKafkaRepository(client.Consumer)
+
+	productService := product.NewService(productMsgRepo, productStoreRepo, brandStoreRepo)
 	brandService := brand.NewService(brandStoreRepo)
 
 	//Middlewares

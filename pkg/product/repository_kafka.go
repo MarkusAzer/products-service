@@ -33,3 +33,19 @@ func (r *KafkaRepository) SendMessage(m *entity.Message) {
 		Value:          []byte(reqBodyBytes.Bytes()),
 	}, nil)
 }
+
+//SendMessages Publish new messagea to kafka
+func (r *KafkaRepository) SendMessages(messages []*entity.Message) {
+	// Produce messages to topic (asynchronously)
+	topic := "products"
+
+	for _, m := range messages {
+		reqBodyBytes := new(bytes.Buffer)
+		json.NewEncoder(reqBodyBytes).Encode(m)
+		r.producer.Produce(&kafka.Message{
+			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+			Key:            []byte(m.ID),
+			Value:          []byte(reqBodyBytes.Bytes()),
+		}, nil)
+	}
+}
