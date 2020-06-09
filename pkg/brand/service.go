@@ -19,6 +19,11 @@ func (s *Service) FindOneByID(id entity.ID) (entity.Brand, error) {
 	return s.repo.FindOneByID(id)
 }
 
+//FindOneByName new product
+func (s *Service) FindOneByName(name string) (entity.Brand, error) {
+	return s.repo.FindOneByName(name)
+}
+
 //Create new product
 func (s *Service) Create(b *entity.Brand) {
 	s.repo.Create(b)
