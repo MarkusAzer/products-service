@@ -1,0 +1,90 @@
+# docker-compose -f ./docker-compose.yml up -d
+version: '2'
+services:
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    restart: "no"
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka-1:29092"
+      JVM_OPTS: "-Xms16M -Xmx48M -Xss180K -XX:-TieredCompilation -XX:+UseStringDeduplication -noverify"
+    depends_on:
+      - "kafka-1"
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+
+  kafka-1:
+    image: wurstmeister/kafka
+    ports:
+      - "9095:9092"
+    environment:
+      # For more details see See https://rmoff.net/2018/08/02/kafka-listeners-explained/
+
+      KAFKA_LISTENERS: LISTENER_BOB://kafka0:29092,LISTENER_FRED://kafka0:9092,LISTENER_ALICE://kafka0:29094
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_BOB://kafka0:29092,LISTENER_FRED://localhost:9092,LISTENER_ALICE://never-gonna-give-you-up:29094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_BOB:PLAINTEXT,LISTENER_FRED:PLAINTEXT,LISTENER_ALICE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_BOB
+
+      KAFKA_LISTENERS: LISTENER_BOB://kafka-1:29092,LISTENER_FRED://kafka-1:9092
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_BOB://kafka-1:29092,LISTENER_FRED://localhost:9095
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_BOB:PLAINTEXT,LISTENER_FRED:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_BOB
+      KAFKA_ADVERTISED_HOST_NAME: kafka1.test.local
+      KAFKA_ADVERTISED_PORT: 9095
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LOG_DIRS: /kafka/logs
+      KAFKA_BROKER_ID: 500
+      KAFKA_offsets_topic_replication_factor: 3
+      KAFKA_log_retention_hours: -1
+      KAFKA_log_retention_bytes: -1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${KAFKA_DATA}/500:/kafka
+
+  kafka-2:
+    image: wurstmeister/kafka
+    ports:
+      - "9096:9092"
+    environment:
+      # For more details see See https://rmoff.net/2018/08/02/kafka-listeners-explained/
+      KAFKA_LISTENERS: LISTENER_BOB://kafka-2:29092,LISTENER_FRED://kafka-2:9092
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_BOB://kafka-2:29092,LISTENER_FRED://localhost:9096
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_BOB:PLAINTEXT,LISTENER_FRED:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_BOB
+      KAFKA_ADVERTISED_HOST_NAME: kafka2.test.local
+      KAFKA_ADVERTISED_PORT: 9096
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LOG_DIRS: /kafka/logs
+      KAFKA_BROKER_ID: 501
+      KAFKA_offsets_topic_replication_factor: 3
+      KAFKA_log_retention_hours: -1
+      KAFKA_log_retention_bytes: -1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${KAFKA_DATA}/501:/kafka
+
+  kafka-3:
+    image: wurstmeister/kafka
+    ports:
+      - "9097:9092"
+    environment:
+      # For more details see See https://rmoff.net/2018/08/02/kafka-listeners-explained/
+      KAFKA_LISTENERS: LISTENER_BOB://kafka-3:29092,LISTENER_FRED://kafka-3:9092
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_BOB://kafka-3:29092,LISTENER_FRED://localhost:9097
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_BOB:PLAINTEXT,LISTENER_FRED:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_BOB
+      KAFKA_ADVERTISED_HOST_NAME: kafka3.test.local
+      KAFKA_ADVERTISED_PORT: 9097
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LOG_DIRS: /kafka/logs
+      KAFKA_BROKER_ID: 502
+      KAFKA_offsets_topic_replication_factor: 3
+      KAFKA_log_retention_hours: -1
+      KAFKA_log_retention_bytes: -1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${KAFKA_DATA}/502:/kafka
