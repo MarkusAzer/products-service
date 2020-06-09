@@ -9,6 +9,7 @@ type messagesReader interface {
 //MessagesWriter product writer
 type messagesWriter interface {
 	SendMessage(m *entity.Message)
+	SendMessages(messages []*entity.Message)
 }
 
 //MessagesRepository repository interface
@@ -27,6 +28,7 @@ type storeWriter interface {
 	StoreCommand(c *entity.Command)
 	Create(p *entity.Product)
 	UpdateOne(id entity.ID, p *entity.Product)
+	UpdateOneP(id entity.ID, p *entity.UpdateProduct)
 	DeleteOne(id entity.ID)
 }
 
@@ -43,7 +45,7 @@ type reader interface {
 //Writer interface
 type writer interface {
 	Create(e *entity.Product) (entity.ID, error)
-	//UpdateOne(id entity.ID, e *entity.Product) (int, error)
+	UpdateOne(id entity.ID, version int32, p *entity.UpdateProduct) (int32, error)
 	Publish(id entity.ID, version int32) (int32, error)
 	Unpublish(id entity.ID, version int32) (int32, error)
 	UpdatePrice(id entity.ID, version int32, price int) (int32, error)

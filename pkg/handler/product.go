@@ -75,10 +75,71 @@ func create(service product.UseCase) http.Handler {
 	})
 }
 
-// func update(service product.UseCase) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 	})
-// }
+func update(service product.UseCase) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		id := entity.ID(vars["id"])
+		version, err := strconv.Atoi(vars["version"])
+		if err != nil {
+			log.Println(err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Provide Valid version value"))
+			return
+		}
+
+		//TODO: validate body
+		//TODO: better approach https://www.alexedwards.net/blog/how-to-properly-parse-a-json-request-body
+		var p *entity.UpdateProduct
+		err = json.NewDecoder(r.Body).Decode(&p)
+		//TODO: notify not allowed fields
+		switch {
+		case err == io.EOF:
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Provide valid Body"))
+			return
+		case err != nil:
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Provide valid JSON"))
+			return
+		}
+
+		// p.ID = id
+		// // Validate product
+		// validErrs := p.Validate()
+		// if len(validErrs) > 0 {
+		// 	response := Response{Message: "Validations Errors", Validations: validErrs, Successful: false}
+
+		// 	payload, err := json.Marshal(response)
+		// 	if err != nil {
+		// 		log.Println(err)
+		// 		w.WriteHeader(http.StatusInternalServerError)
+		// 		return
+		// 	}
+
+		// 	w.WriteHeader(http.StatusBadRequest)
+		// 	//TODO better middleware https://stackoverflow.com/questions/51456253/how-to-set-http-responsewriter-content-type-header-globally-for-all-api-endpoint
+		// 	w.Header().Add("Content-Type", "application/json")
+		// 	w.Write(payload)
+		// 	return
+		//}
+
+		updatedVersion, err := service.UpdateOne(id, int32(version), p)
+		if err != nil {
+			log.Println(err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		if err := json.NewEncoder(w).Encode(p); err != nil {
+			log.Println(err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(strconv.Itoa(int(updatedVersion))))
+			return
+		}
+	})
+}
 
 func publish(service product.UseCase) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +258,7 @@ func delete(service product.UseCase) http.Handler {
 //MakeProductHandlers make url handlers
 func MakeProductHandlers(r *mux.Router, service product.UseCase) {
 	r.Handle("/v1/products/command/create", create(service)).Methods("POST", "OPTIONS").Name("CreateProduct")
-	// r.Handle("/v1/products/command/{id}/update", update(service)).Methods("GET", "OPTIONS").Name("UpdateProduct")
+	r.Handle("/v1/products/command/{id}/{version}/update", update(service)).Methods("POST", "OPTIONS").Name("UpdateProduct")
 	r.Handle("/v1/products/command/{id}/{version}/publish", publish(service)).Methods("POST", "OPTIONS").Name("PublishProduct")
 	r.Handle("/v1/products/command/{id}/{version}/unpublish", unpublish(service)).Methods("POST", "OPTIONS").Name("UnpublishProduct")
 	r.Handle("/v1/products/command/{id}/{version}/update-price", updatePrice(service)).Methods("POST", "OPTIONS").Name("UpdatePrice")

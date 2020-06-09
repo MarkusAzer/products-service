@@ -62,6 +62,15 @@ func (r *MongoRepository) UpdateOne(id entity.ID, p *entity.Product) {
 	}
 }
 
+//UpdateOneP update an existing product
+func (r *MongoRepository) UpdateOneP(id entity.ID, p *entity.UpdateProduct) {
+	coll := r.db.Collection("products")
+	_, err := coll.UpdateOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: id}}, bson.D{primitive.E{Key: "$set", Value: p}})
+	if err != nil {
+		log.Println("Error on updating Product", err)
+	}
+}
+
 //DeleteOne update an existing Product
 func (r *MongoRepository) DeleteOne(id entity.ID) {
 	coll := r.db.Collection("products")
