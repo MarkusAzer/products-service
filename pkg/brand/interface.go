@@ -17,6 +17,7 @@ type MessagesRepository interface {
 //StoreReader brand reader interface
 type storeReader interface {
 	FindOneByID(id entity.ID) (entity.Brand, error)
+	FindOneByName(name string) (entity.Brand, error)
 }
 
 //StoreWriter brand writer interface
