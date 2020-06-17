@@ -6,11 +6,13 @@ import (
 	"net/http"
 
 	"github.com/MarkusAzer/products-service/config"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	kafkaStore "github.com/MarkusAzer/products-service/lib/kafka"
 	"github.com/MarkusAzer/products-service/lib/mongodb"
 	"github.com/MarkusAzer/products-service/pkg/brand"
 	"github.com/MarkusAzer/products-service/pkg/handler"
+	"github.com/MarkusAzer/products-service/pkg/metric"
 	"github.com/MarkusAzer/products-service/pkg/middleware"
 	"github.com/MarkusAzer/products-service/pkg/product"
 	"github.com/gorilla/handlers"
@@ -43,12 +45,18 @@ func main() {
 	productService := product.NewService(productMsgRepo, productStoreRepo, brandStoreRepo)
 	brandService := brand.NewService(brandStoreRepo)
 
+	metricService, err := metric.NewPrometheusService()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	//Middlewares
 	r.Use(middleware.Logging)
 	r.Use(handlers.CORS())
 	r.Use(middleware.ValidateHeaderType)
+	r.Use(middleware.Metrics(metricService))
 
-	http.Handle("/", r)
+	r.Handle("/metrics", promhttp.Handler())
 	r.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
