@@ -69,12 +69,10 @@ func (s *Service) UpdateOne(id entity.ID, version int32, p *entity.UpdateProduct
 		return 0, err
 	}
 
-	if version != product.Version+1 {
+	if version != product.Version {
 		fmt.Println("miss matching version")
 		return 0, errors.New("miss matching version")
 	}
-
-	version--
 
 	var errs []error
 	var messages []*entity.Message
@@ -197,7 +195,7 @@ func (s *Service) Publish(ID entity.ID, version int32) (int32, error) {
 		return 0, err
 	}
 
-	if version != p.Version+1 {
+	if version != p.Version {
 		fmt.Println("miss matching version")
 		return 0, errors.New("miss matching version")
 	}
@@ -213,6 +211,8 @@ func (s *Service) Publish(ID entity.ID, version int32) (int32, error) {
 
 	c := &entity.Command{AggregateID: string(ID), Type: "PublishProduct", Payload: newMap, Timestamp: Timestamp}
 	s.storeRepo.StoreCommand(c)
+
+	version++
 
 	//TODO Patch the update
 	p.Status = "Publish"
@@ -237,7 +237,7 @@ func (s *Service) Unpublish(ID entity.ID, version int32) (int32, error) {
 		return 0, err
 	}
 
-	if version != p.Version+1 {
+	if version != p.Version {
 		fmt.Println("miss matching version")
 		return 0, errors.New("miss matching version")
 	}
@@ -253,6 +253,8 @@ func (s *Service) Unpublish(ID entity.ID, version int32) (int32, error) {
 
 	c := &entity.Command{AggregateID: string(ID), Type: "UnpublishProduct", Payload: newMap, Timestamp: Timestamp}
 	s.storeRepo.StoreCommand(c)
+
+	version++
 
 	//TODO Patch the update
 	p.Status = "Unpublish"
@@ -277,7 +279,7 @@ func (s *Service) UpdatePrice(ID entity.ID, version int32, price int) (int32, er
 		return 0, err
 	}
 
-	if version != p.Version+1 {
+	if version != p.Version {
 		fmt.Println("miss matching version")
 		return 0, errors.New("miss matching version")
 	}
@@ -287,6 +289,8 @@ func (s *Service) UpdatePrice(ID entity.ID, version int32, price int) (int32, er
 
 	c := &entity.Command{AggregateID: string(ID), Type: "UpdateProductPrice", Payload: newMap, Timestamp: Timestamp}
 	s.storeRepo.StoreCommand(c)
+
+	version++
 
 	//TODO Patch the update
 	p.Price = int8(price)
@@ -311,7 +315,7 @@ func (s *Service) Delete(ID entity.ID, version int32) error {
 		return err
 	}
 
-	if version != p.Version+1 {
+	if version != p.Version {
 		fmt.Println("miss matching version")
 		return errors.New("miss matching version")
 	}
@@ -320,6 +324,8 @@ func (s *Service) Delete(ID entity.ID, version int32) error {
 	s.storeRepo.StoreCommand(c)
 
 	s.storeRepo.DeleteOne(ID)
+
+	version++
 
 	//TODO:handle failure cases
 	m := &entity.Message{ID: string(ID), Type: "PRODUCT_DELETED", Version: version, Timestamp: Timestamp}
