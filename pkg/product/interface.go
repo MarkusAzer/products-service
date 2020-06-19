@@ -27,9 +27,9 @@ type storeReader interface {
 type storeWriter interface {
 	StoreCommand(c *entity.Command)
 	Create(p *entity.Product)
-	UpdateOne(id entity.ID, p *entity.Product)
-	UpdateOneP(id entity.ID, p *entity.UpdateProduct)
-	DeleteOne(id entity.ID)
+	UpdateOne(id entity.ID, p *entity.Product, v entity.Version)
+	UpdateOneP(id entity.ID, p *entity.UpdateProduct, v entity.Version)
+	DeleteOne(id entity.ID, v entity.Version)
 }
 
 //StoreRepository product store repository interface

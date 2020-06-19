@@ -12,7 +12,7 @@ type Message struct {
 	Type string
 
 	// Version version count
-	Version int32
+	Version Version
 
 	// Payload contains message data
 	Payload map[string]interface{}

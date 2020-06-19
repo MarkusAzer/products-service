@@ -59,8 +59,9 @@ func (s *Service) Create(p *entity.Product) (entity.ID, error) {
 }
 
 //UpdateOne product
-func (s *Service) UpdateOne(id entity.ID, version int32, p *entity.UpdateProduct) (int32, error) {
+func (s *Service) UpdateOne(id entity.ID, v int32, p *entity.UpdateProduct) (int32, error) {
 	Timestamp := time.Now()
+	version := entity.Version(v)
 
 	//TODO check Transactions
 	product, err := s.storeRepo.FindOneByID(id)
@@ -176,17 +177,18 @@ func (s *Service) UpdateOne(id entity.ID, version int32, p *entity.UpdateProduct
 
 	p.Version = version
 	//TODO Patch the update
-	s.storeRepo.UpdateOneP(id, p)
+	s.storeRepo.UpdateOneP(id, p, version)
 
 	//TODO:handle failure cases
 	s.msgRepo.SendMessages(messages)
 
-	return version, nil
+	return int32(version), nil
 }
 
 //Publish publish product
-func (s *Service) Publish(ID entity.ID, version int32) (int32, error) {
+func (s *Service) Publish(ID entity.ID, v int32) (int32, error) {
 	Timestamp := time.Now()
+	version := entity.Version(v)
 
 	//TODO check Transactions
 	p, err := s.storeRepo.FindOneByID(ID)
@@ -217,18 +219,19 @@ func (s *Service) Publish(ID entity.ID, version int32) (int32, error) {
 	//TODO Patch the update
 	p.Status = "Publish"
 	p.Version = version
-	s.storeRepo.UpdateOne(ID, &p)
+	s.storeRepo.UpdateOne(ID, &p, version)
 
 	//TODO:handle failure cases
 	m := &entity.Message{ID: string(ID), Type: "PRODUCT_PUBLISHED", Version: version, Payload: newMap, Timestamp: Timestamp}
 	s.msgRepo.SendMessage(m)
 
-	return version, nil
+	return int32(version), nil
 }
 
 //Unpublish unpublish product
-func (s *Service) Unpublish(ID entity.ID, version int32) (int32, error) {
+func (s *Service) Unpublish(ID entity.ID, v int32) (int32, error) {
 	Timestamp := time.Now()
+	version := entity.Version(v)
 
 	//TODO check Transactions
 	p, err := s.storeRepo.FindOneByID(ID)
@@ -259,18 +262,19 @@ func (s *Service) Unpublish(ID entity.ID, version int32) (int32, error) {
 	//TODO Patch the update
 	p.Status = "Unpublish"
 	p.Version = version
-	s.storeRepo.UpdateOne(ID, &p)
+	s.storeRepo.UpdateOne(ID, &p, version)
 
 	//TODO:handle failure cases
 	m := &entity.Message{ID: string(ID), Type: "PRODUCT_UNPUBLISHED", Version: version, Payload: newMap, Timestamp: Timestamp}
 	s.msgRepo.SendMessage(m)
 
-	return version, nil
+	return int32(version), nil
 }
 
 //UpdatePrice product price
-func (s *Service) UpdatePrice(ID entity.ID, version int32, price int) (int32, error) {
+func (s *Service) UpdatePrice(ID entity.ID, v int32, price int) (int32, error) {
 	Timestamp := time.Now()
+	version := entity.Version(v)
 
 	//TODO check Transactions
 	p, err := s.storeRepo.FindOneByID(ID)
@@ -295,18 +299,19 @@ func (s *Service) UpdatePrice(ID entity.ID, version int32, price int) (int32, er
 	//TODO Patch the update
 	p.Price = int8(price)
 	p.Version = version
-	s.storeRepo.UpdateOne(ID, &p)
+	s.storeRepo.UpdateOne(ID, &p, version)
 
 	//TODO:handle failure cases
 	m := &entity.Message{ID: string(ID), Type: "PRODUCT_PRICE_UPDATED", Version: version, Payload: newMap, Timestamp: Timestamp}
 	s.msgRepo.SendMessage(m)
 
-	return version, nil
+	return int32(version), nil
 }
 
 //Delete product
-func (s *Service) Delete(ID entity.ID, version int32) error {
+func (s *Service) Delete(ID entity.ID, v int32) error {
 	Timestamp := time.Now()
+	version := entity.Version(v)
 
 	//TODO check Transactions
 	p, err := s.storeRepo.FindOneByID(ID)
@@ -323,7 +328,7 @@ func (s *Service) Delete(ID entity.ID, version int32) error {
 	c := &entity.Command{AggregateID: string(ID), Type: "DeleteProduct", Timestamp: Timestamp}
 	s.storeRepo.StoreCommand(c)
 
-	s.storeRepo.DeleteOne(ID)
+	s.storeRepo.DeleteOne(ID, version)
 
 	version++
 
