@@ -12,6 +12,9 @@ type ID string
 //Time Type
 type Time time.Time
 
+//Version Type
+type Version int32
+
 //NewID create a new id
 func NewID() ID {
 	id := uuid.New()

@@ -54,27 +54,27 @@ func (r *MongoRepository) Create(p *entity.Product) {
 }
 
 //UpdateOne update an existing product
-func (r *MongoRepository) UpdateOne(id entity.ID, p *entity.Product) {
+func (r *MongoRepository) UpdateOne(id entity.ID, p *entity.Product, v entity.Version) {
 	coll := r.db.Collection("products")
-	_, err := coll.UpdateOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: id}}, bson.D{primitive.E{Key: "$set", Value: p}})
+	_, err := coll.UpdateOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: id}, primitive.E{Key: "_V", Value: v}}, bson.D{primitive.E{Key: "$set", Value: p}})
 	if err != nil {
 		log.Println("Error on updating Product", err)
 	}
 }
 
 //UpdateOneP update an existing product
-func (r *MongoRepository) UpdateOneP(id entity.ID, p *entity.UpdateProduct) {
+func (r *MongoRepository) UpdateOneP(id entity.ID, p *entity.UpdateProduct, v entity.Version) {
 	coll := r.db.Collection("products")
-	_, err := coll.UpdateOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: id}}, bson.D{primitive.E{Key: "$set", Value: p}})
+	_, err := coll.UpdateOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: id}, primitive.E{Key: "_V", Value: v}}, bson.D{primitive.E{Key: "$set", Value: p}})
 	if err != nil {
 		log.Println("Error on updating Product", err)
 	}
 }
 
 //DeleteOne update an existing Product
-func (r *MongoRepository) DeleteOne(id entity.ID) {
+func (r *MongoRepository) DeleteOne(id entity.ID, v entity.Version) {
 	coll := r.db.Collection("products")
-	_, err := coll.DeleteOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: id}})
+	_, err := coll.DeleteOne(context.TODO(), bson.D{primitive.E{Key: "_id", Value: id}, primitive.E{Key: "_V", Value: v}})
 	if err != nil {
 		log.Println("Error on deleting Product", err)
 	}
