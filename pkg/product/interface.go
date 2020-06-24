@@ -1,3 +1,5 @@
+//go:generate mockgen -source interface.go -destination mock/product_mock.go -package productMock
+
 package product
 
 import "github.com/MarkusAzer/products-service/pkg/entity"
@@ -20,16 +22,16 @@ type MessagesRepository interface {
 
 //StoreReader product reader interface
 type storeReader interface {
-	FindOneByID(id entity.ID) (entity.Product, error)
+	FindOneByID(id entity.ID) (*entity.Product, error)
 }
 
 //StoreWriter product writer interface
 type storeWriter interface {
-	StoreCommand(c *entity.Command)
-	Create(p *entity.Product)
-	UpdateOne(id entity.ID, p *entity.Product, v entity.Version)
-	UpdateOneP(id entity.ID, p *entity.UpdateProduct, v entity.Version)
-	DeleteOne(id entity.ID, v entity.Version)
+	StoreCommand(c *entity.Command) (*entity.ID, error)
+	Create(p *entity.Product) (*entity.ID, error)
+	UpdateOne(id entity.ID, p *entity.Product, v entity.Version) (int, error)
+	UpdateOneP(id entity.ID, p *entity.UpdateProduct, v entity.Version) (int, error)
+	DeleteOne(id entity.ID, v entity.Version) (int, error)
 }
 
 //StoreRepository product store repository interface
