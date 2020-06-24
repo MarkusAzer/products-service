@@ -219,7 +219,7 @@ func (s *Service) Publish(ID entity.ID, v int32) (int32, error) {
 	//TODO Patch the update
 	p.Status = "Publish"
 	p.Version = version
-	s.storeRepo.UpdateOne(ID, &p, version)
+	s.storeRepo.UpdateOne(ID, p, version)
 
 	//TODO:handle failure cases
 	m := &entity.Message{ID: string(ID), Type: "PRODUCT_PUBLISHED", Version: version, Payload: newMap, Timestamp: Timestamp}
@@ -262,7 +262,7 @@ func (s *Service) Unpublish(ID entity.ID, v int32) (int32, error) {
 	//TODO Patch the update
 	p.Status = "Unpublish"
 	p.Version = version
-	s.storeRepo.UpdateOne(ID, &p, version)
+	s.storeRepo.UpdateOne(ID, p, version)
 
 	//TODO:handle failure cases
 	m := &entity.Message{ID: string(ID), Type: "PRODUCT_UNPUBLISHED", Version: version, Payload: newMap, Timestamp: Timestamp}
@@ -299,7 +299,7 @@ func (s *Service) UpdatePrice(ID entity.ID, v int32, price int) (int32, error) {
 	//TODO Patch the update
 	p.Price = int8(price)
 	p.Version = version
-	s.storeRepo.UpdateOne(ID, &p, version)
+	s.storeRepo.UpdateOne(ID, p, version)
 
 	//TODO:handle failure cases
 	m := &entity.Message{ID: string(ID), Type: "PRODUCT_PRICE_UPDATED", Version: version, Payload: newMap, Timestamp: Timestamp}

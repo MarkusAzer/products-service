@@ -25,3 +25,9 @@ func NewID() ID {
 func TimeNow() Time {
 	return Time(time.Now().UTC())
 }
+
+//IsValidUUID check if is a valid ID
+func IsValidUUID(u string) bool {
+	_, err := uuid.Parse(u)
+	return err == nil
+}
