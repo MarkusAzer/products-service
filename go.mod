@@ -10,6 +10,7 @@ require (
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/prometheus/client_golang v1.7.0
+	github.com/stretchr/testify v1.4.0
 	go.mongodb.org/mongo-driver v1.3.4
 	gopkg.in/confluentinc/confluent-kafka-go.v1 v1.4.2
 )
