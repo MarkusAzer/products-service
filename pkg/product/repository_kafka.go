@@ -27,6 +27,7 @@ func (r *KafkaRepository) SendMessage(m *entity.Message) {
 	reqBodyBytes := new(bytes.Buffer)
 	json.NewEncoder(reqBodyBytes).Encode(m)
 
+	//TODO: return once msg published
 	r.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 		Key:            []byte(m.ID),

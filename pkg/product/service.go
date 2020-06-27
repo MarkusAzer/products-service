@@ -1,15 +1,30 @@
 package product
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/MarkusAzer/products-service/pkg/brand"
 	"github.com/MarkusAzer/products-service/pkg/entity"
 	"github.com/fatih/structs"
+	"github.com/go-playground/validator"
 )
+
+// Validation in Application layer
+// In this layer, as validation, we must ensure that domain objects can receive the input. We should reject the input which the domain object can't be received.
+
+// For example, when some mandatory parameters are missing, it should be rejected because the domain object has no way to receive like that parameter.
+
+//DTOhttps://softwareengineering.stackexchange.com/questions/373284/what-is-the-use-of-dto-instead-of-entity
+//https://stackoverflow.com/questions/21554977/should-services-always-return-dtos-or-can-they-also-return-domain-models
+
+//clean https://www.entropywins.wtf/blog/2016/11/24/implementing-the-clean-architecture/
+//https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations
+//http://www.plainionist.net/Implementing-Clean-Architecture-Controller-Presenter/
+
+//TODO struct to map funchttps://stackoverflow.com/questions/23589564/function-for-converting-a-struct-to-map-in-golang
 
 //Service service interface
 type Service struct {
@@ -27,157 +42,412 @@ func NewService(msgR MessagesRepository, storeR StoreRepository, brandR brand.St
 	}
 }
 
-//TODO struct to map funchttps://stackoverflow.com/questions/23589564/function-for-converting-a-struct-to-map-in-golang
+//CreateProductDTO new product DTO
+type CreateProductDTO struct {
+	Name        string `json:"name" validate:"required,min=3"`
+	Description string `json:"description,omitempty" validate:"omitempty,min=20"`
+	Slug        string `json:"slug,omitempty" validate:"omitempty"` //TODO: find slug validation
+	Image       string `json:"image,omitempty" validate:"omitempty,uri"`
+	Brand       string `json:"brand,omitempty" validate:"omitempty"`
+	Category    string `json:"category,omitempty" validate:"omitempty"`
+	Price       int8   `json:"price,omitempty" validate:"omitempty,min=1"`
+}
 
 //Create new product
-func (s *Service) Create(p *entity.Product) (entity.ID, error) {
+func (s *Service) Create(createProductDTO CreateProductDTO) (entity.ID, entity.Version, []string) {
+
+	//Validate DTOs, Terminate the Create process if the input is not valid
+	if err := validator.New().Struct(createProductDTO); err != nil {
+		var errs []string
+
+		for _, e := range err.(validator.ValidationErrors) {
+			errs = append(errs, e.Field()+" : "+fmt.Sprint(e))
+		}
+
+		return "", 1, errs
+	}
+
 	ID := entity.NewID()
 	Timestamp := time.Now()
 
-	p.ID = ID
-	p.Version = 1
-	p.CreatedAt = entity.Time(Timestamp)
+	//Loop through the struct to generate events and validate
+	var errs []string
+	var messages []*entity.Message
+	var version entity.Version = 1
 
-	data, err := json.Marshal(p) // Convert to a json string
+	messages = append(messages, &entity.Message{
+		ID:        string(ID),
+		Type:      "PRODUCT_DRAFT_CREATED",
+		Version:   version,
+		Payload:   make(map[string]interface{}),
+		Timestamp: Timestamp},
+	)
 
-	if err != nil {
-		return "", err
+	fields := reflect.TypeOf(createProductDTO)
+	values := reflect.ValueOf(createProductDTO)
+
+	num := fields.NumField()
+
+	for i := 0; i < num; i++ {
+		field := fields.Field(i)
+		value := values.Field(i)
+
+		switch field.Name {
+		case "Name":
+			version++
+
+			payload := make(map[string]interface{})
+			payload["name"] = value.String()
+
+			messages = append(messages, &entity.Message{
+				ID:        string(ID),
+				Type:      "PRODUCT_NAME_UPDATED",
+				Version:   version,
+				Payload:   payload,
+				Timestamp: Timestamp})
+
+		case "Description":
+			if value.String() != "" {
+				version++
+
+				payload := make(map[string]interface{})
+				payload["description"] = value.String()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_DESCRIPTION_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
+		case "Slug":
+			//TODO: check uniqueness
+			if value.String() != "" {
+				version++
+
+				payload := make(map[string]interface{})
+				payload["slug"] = value.String()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_SLUG_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
+		case "Image":
+			//TODO: check if image exist and add event to delete other image
+			if value.String() != "" {
+				version++
+
+				payload := make(map[string]interface{})
+				payload["image"] = value.String()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_IMAGE_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
+		case "Brand":
+			if value.String() != "" {
+				version++
+
+				_, err := s.brandRepo.FindOneByName(value.String())
+				switch err {
+				case entity.ErrNotFound:
+					errs = append(errs, "Brand "+value.String()+" Not found")
+				default:
+					if err != nil {
+						return "", 1, []string{"Internal Server Error"}
+					}
+				}
+
+				payload := make(map[string]interface{})
+				payload["brand"] = value.String()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_BRAND_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
+		case "Category":
+			if value.String() != "" {
+				version++
+
+				payload := make(map[string]interface{})
+				payload["category"] = value.String()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_CATEGORY_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
+		case "Price":
+			if value.Int() != 0 {
+				version++
+
+				payload := make(map[string]interface{})
+				payload["price"] = value.Int()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_PRICE_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
+		default:
+			fmt.Println("=>>>>>> no case")
+		}
 	}
-	var newMap map[string]interface{}
-	err = json.Unmarshal(data, &newMap) // Convert to a map
 
-	c := &entity.Command{AggregateID: string(ID), Type: "CreateProduct", Payload: newMap, Timestamp: Timestamp}
-	s.storeRepo.StoreCommand(c)
+	if len(errs) >= 1 {
+		return "", 1, errs
+	}
 
-	s.storeRepo.Create(p)
+	p := &entity.Product{
+		ID:          ID,
+		Version:     version,
+		Name:        createProductDTO.Name,
+		Description: createProductDTO.Description,
+		Slug:        createProductDTO.Slug,
+		Image:       createProductDTO.Image,
+		Brand:       createProductDTO.Brand,
+		Category:    createProductDTO.Category,
+		Price:       createProductDTO.Price,
+		CreatedAt:   Timestamp,
+	}
+
+	// data, err := json.Marshal(p)
+
+	// if err != nil {
+	// 	return "", 1, []string{"Internal Server Error"}
+	// }
+
+	// var newMap map[string]interface{}
+	// err = json.Unmarshal(data, &newMap) // Convert to a map
+
+	//TODO: check if we should store product struct or createProductDTO
+	c := &entity.Command{AggregateID: string(ID), Type: "CreateProduct", Payload: structs.Map(p), Timestamp: Timestamp}
+	//TODO: Use transactions
+	_, err := s.storeRepo.StoreCommand(c)
+	if err != nil {
+		return "", 1, []string{"Internal Server Error"}
+	}
+
+	_, err = s.storeRepo.Create(p)
+	if err != nil {
+		return "", 1, []string{"Internal Server Error"}
+	}
 
 	//TODO:handle failure cases
-	m := &entity.Message{ID: string(ID), Type: "PRODUCT_CREATED", Version: 1, Payload: newMap, Timestamp: Timestamp}
-	s.msgRepo.SendMessage(m)
+	// m := &entity.Message{ID: string(ID), Type: "PRODUCT_CREATED", Version: 1, Payload: newMap, Timestamp: Timestamp}
+	// s.msgRepo.SendMessage(m)
+	s.msgRepo.SendMessages(messages)
 
-	return ID, err
+	return ID, p.Version, nil
+}
+
+//UpdateProductDTO new product DTO
+type UpdateProductDTO struct {
+	Name        string `json:"name,omitempty" validate:"omitempty,required,min=3"`
+	Description string `json:"description,omitempty" validate:"omitempty,min=20"`
+	Slug        string `json:"slug,omitempty" validate:"omitempty"` //TODO: find slug validation
+	Image       string `json:"image,omitempty" validate:"omitempty,uri"`
+	Brand       string `json:"brand,omitempty" validate:"omitempty"`
+	Category    string `json:"category,omitempty" validate:"omitempty"`
 }
 
 //UpdateOne product
-func (s *Service) UpdateOne(id entity.ID, v int32, p *entity.UpdateProduct) (int32, error) {
+func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProductDTO) (int32, []string) {
+	//Validate DTOs, Terminate the Create process if the input is not valid
+	if err := validator.New().Struct(updateProductDTO); err != nil {
+		var errs []string
+
+		for _, e := range err.(validator.ValidationErrors) {
+			errs = append(errs, e.Field()+" : "+fmt.Sprint(e))
+		}
+
+		return 0, errs
+	}
+
 	Timestamp := time.Now()
 	version := entity.Version(v)
 
-	//TODO check Transactions
-	product, err := s.storeRepo.FindOneByID(id)
-	if err != nil {
-		fmt.Println(err)
-		return 0, err
+	p, err := s.storeRepo.FindOneByID(ID)
+	switch err {
+	case entity.ErrNotFound:
+		return 0, []string{"Product with id " + string(ID) + " Not found"}
+	default:
+		if err != nil {
+			return 0, []string{"Internal Server Error"}
+		}
 	}
 
-	if version != product.Version {
-		fmt.Println("miss matching version")
-		return 0, errors.New("miss matching version")
+	if version != p.Version {
+		return 0, []string{"Version conflict"}
 	}
 
-	var errs []error
+	//Loop through the struct to generate events and validate
+	var errs []string
 	var messages []*entity.Message
 
-	if p.Brand != "" {
-		if p.Brand == product.Brand {
-			errs = append(errs, errors.New("Brand already updated"))
+	fields := reflect.TypeOf(updateProductDTO)
+	values := reflect.ValueOf(updateProductDTO)
+
+	num := fields.NumField()
+
+	for i := 0; i < num; i++ {
+		field := fields.Field(i)
+		value := values.Field(i)
+
+		switch field.Name {
+		case "Name":
+			if value.String() != "" {
+				if p.Name == updateProductDTO.Name {
+					errs = append(errs, "Category already updated")
+				}
+				version++
+
+				payload := make(map[string]interface{})
+				payload["name"] = value.String()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_NAME_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
+		case "Description":
+			if value.String() != "" {
+				if p.Description == updateProductDTO.Description {
+					errs = append(errs, "Description already updated")
+				}
+				version++
+
+				payload := make(map[string]interface{})
+				payload["description"] = value.String()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_DESCRIPTION_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
+		case "Slug":
+			//TODO: check uniqueness
+			if value.String() != "" {
+				if p.Slug == updateProductDTO.Slug {
+					errs = append(errs, "Slug already updated")
+				}
+				version++
+
+				payload := make(map[string]interface{})
+				payload["slug"] = value.String()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_SLUG_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
+		case "Image":
+			//TODO: check if image exist and add event to delete other image
+			if value.String() != "" {
+				if p.Image == updateProductDTO.Image {
+					errs = append(errs, "Image already updated")
+				}
+				version++
+
+				payload := make(map[string]interface{})
+				payload["image"] = value.String()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_IMAGE_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
+		case "Brand":
+			if value.String() != "" {
+				if p.Brand == updateProductDTO.Brand {
+					errs = append(errs, "Brand already updated")
+				}
+				version++
+
+				_, err := s.brandRepo.FindOneByName(value.String())
+				switch err {
+				case entity.ErrNotFound:
+					errs = append(errs, "Brand "+value.String()+" Not found")
+				default:
+					if err != nil {
+						return 0, []string{"Internal Server Error"}
+					}
+				}
+
+				payload := make(map[string]interface{})
+				payload["brand"] = value.String()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_BRAND_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
+		case "Category":
+			if value.String() != "" {
+				if p.Category == updateProductDTO.Category {
+					errs = append(errs, "Category already updated")
+				}
+				version++
+
+				payload := make(map[string]interface{})
+				payload["category"] = value.String()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_CATEGORY_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
 		}
-
-		_, err := s.brandRepo.FindOneByName(p.Brand)
-
-		if err != nil {
-			errs = append(errs, errors.New("Brand doesnt exist"))
-		}
-
-		version++
-
-		newMap := make(map[string]interface{})
-		newMap["brand"] = p.Brand
-
-		messages = append(messages, &entity.Message{ID: string(id), Type: "PRODUCT_BRAND_UPDATED", Version: version, Payload: newMap, Timestamp: Timestamp})
-
-	}
-
-	if p.Category != "" {
-		if p.Category == product.Category {
-			errs = append(errs, errors.New("Category already updated"))
-		}
-
-		version++
-
-		newMap := make(map[string]interface{})
-		newMap["category"] = p.Category
-
-		messages = append(messages, &entity.Message{ID: string(id), Type: "PRODUCT_CATEGORY_UPDATED", Version: version, Payload: newMap, Timestamp: Timestamp})
-
-	}
-
-	if p.Description != "" {
-		if p.Description == product.Description {
-			errs = append(errs, errors.New("Description already updated"))
-		}
-
-		version++
-
-		newMap := make(map[string]interface{})
-		newMap["description"] = p.Description
-
-		messages = append(messages, &entity.Message{ID: string(id), Type: "PRODUCT_DESCRIPTION_UPDATED", Version: version, Payload: newMap, Timestamp: Timestamp})
-
-	}
-
-	if p.Image != "" {
-		if p.Image == product.Image {
-			errs = append(errs, errors.New("Image already updated"))
-		}
-
-		version++
-
-		newMap := make(map[string]interface{})
-		newMap["image"] = p.Image
-
-		messages = append(messages, &entity.Message{ID: string(id), Type: "PRODUCT_IMAGE_UPDATED", Version: version, Payload: newMap, Timestamp: Timestamp})
-
-	}
-
-	if p.Name != "" {
-		if p.Name == product.Name {
-			errs = append(errs, errors.New("Name already updated"))
-		}
-
-		version++
-
-		newMap := make(map[string]interface{})
-		newMap["name"] = p.Name
-
-		messages = append(messages, &entity.Message{ID: string(id), Type: "PRODUCT_NAME_UPDATED", Version: version, Payload: newMap, Timestamp: Timestamp})
-
-	}
-
-	if p.Slug != "" {
-		if p.Slug == product.Slug {
-			errs = append(errs, errors.New("Slug already updated"))
-		}
-
-		version++
-
-		newMap := make(map[string]interface{})
-		newMap["slug"] = p.Slug
-
-		messages = append(messages, &entity.Message{ID: string(id), Type: "PRODUCT_SLUG_UPDATED", Version: version, Payload: newMap, Timestamp: Timestamp})
-
 	}
 
 	if len(errs) > 0 {
-		return 0, errs[0]
+		return 0, errs
 	}
 
-	c := &entity.Command{AggregateID: string(id), Type: "UpdateProduct", Payload: structs.Map(p), Timestamp: Timestamp}
+	if version == p.Version {
+		return 0, []string{"No Updates Found"}
+	}
+
+	c := &entity.Command{AggregateID: string(ID), Type: "UpdateProduct", Payload: structs.Map(updateProductDTO), Timestamp: Timestamp}
 	s.storeRepo.StoreCommand(c)
 
-	p.Version = version
+	up := &entity.UpdateProduct{
+		Version:     version,
+		Name:        updateProductDTO.Name,
+		Description: updateProductDTO.Description,
+		Slug:        updateProductDTO.Slug,
+		Image:       updateProductDTO.Image,
+		Brand:       updateProductDTO.Brand,
+		Category:    updateProductDTO.Category,
+	}
+
 	//TODO Patch the update
-	s.storeRepo.UpdateOneP(id, p, version)
+	s.storeRepo.UpdateOneP(ID, up, entity.Version(v))
 
 	//TODO:handle failure cases
 	s.msgRepo.SendMessages(messages)

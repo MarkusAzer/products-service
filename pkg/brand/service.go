@@ -20,7 +20,7 @@ func (s *Service) FindOneByID(id entity.ID) (entity.Brand, error) {
 }
 
 //FindOneByName new product
-func (s *Service) FindOneByName(name string) (entity.Brand, error) {
+func (s *Service) FindOneByName(name string) (*entity.Brand, error) {
 	return s.repo.FindOneByName(name)
 }
 

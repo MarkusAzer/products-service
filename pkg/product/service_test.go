@@ -2,7 +2,6 @@ package product
 
 import (
 	"testing"
-	"time"
 
 	brandMock "github.com/MarkusAzer/products-service/pkg/brand/mock"
 	"github.com/MarkusAzer/products-service/pkg/entity"
@@ -23,22 +22,17 @@ func TestCreate(t *testing.T) {
 
 	ID := entity.NewID()
 	storeID := entity.NewID()
-	Timestamp := time.Now()
 
-	p := &entity.Product{
-		ID:        ID,
-		Version:   1,
-		Name:      "Test Product",
-		Price:     20,
-		Status:    "Unpublish",
-		CreatedAt: entity.Time(Timestamp),
+	p := CreateProductDTO{
+		Name:  "Test Product",
+		Price: 20,
 	}
 
 	productRepo.EXPECT().StoreCommand(gomock.Any()).Return(&storeID, nil)
-	productRepo.EXPECT().Create(gomock.Any()).Return(&p.ID, nil)
+	productRepo.EXPECT().Create(gomock.Any()).Return(&ID, nil)
 	messagesRepo.EXPECT().SendMessage(gomock.Any())
 
-	id, err := service.Create(p)
+	id, _, err := service.Create(p)
 
 	assert.Nil(t, err)
 	assert.True(t, entity.IsValidUUID(string(id)))
