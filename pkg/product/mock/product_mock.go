@@ -6,6 +6,7 @@ package productMock
 
 import (
 	entity "github.com/MarkusAzer/products-service/pkg/entity"
+	product "github.com/MarkusAzer/products-service/pkg/product"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -423,33 +424,34 @@ func (m *Mockwriter) EXPECT() *MockwriterMockRecorder {
 }
 
 // Create mocks base method
-func (m *Mockwriter) Create(e *entity.Product) (entity.ID, error) {
+func (m *Mockwriter) Create(p product.CreateProductDTO) (entity.ID, entity.Version, []string) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", e)
+	ret := m.ctrl.Call(m, "Create", p)
 	ret0, _ := ret[0].(entity.ID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(entity.Version)
+	ret2, _ := ret[2].([]string)
+	return ret0, ret1, ret2
 }
 
 // Create indicates an expected call of Create
-func (mr *MockwriterMockRecorder) Create(e interface{}) *gomock.Call {
+func (mr *MockwriterMockRecorder) Create(p interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*Mockwriter)(nil).Create), e)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*Mockwriter)(nil).Create), p)
 }
 
 // UpdateOne mocks base method
-func (m *Mockwriter) UpdateOne(id entity.ID, version int32, p *entity.UpdateProduct) (int32, error) {
+func (m *Mockwriter) UpdateOne(id entity.ID, v int32, updateProductDTO product.UpdateProductDTO) (int32, []string) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOne", id, version, p)
+	ret := m.ctrl.Call(m, "UpdateOne", id, v, updateProductDTO)
 	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].(error)
+	ret1, _ := ret[1].([]string)
 	return ret0, ret1
 }
 
 // UpdateOne indicates an expected call of UpdateOne
-func (mr *MockwriterMockRecorder) UpdateOne(id, version, p interface{}) *gomock.Call {
+func (mr *MockwriterMockRecorder) UpdateOne(id, v, updateProductDTO interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*Mockwriter)(nil).UpdateOne), id, version, p)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*Mockwriter)(nil).UpdateOne), id, v, updateProductDTO)
 }
 
 // Publish mocks base method
@@ -535,33 +537,34 @@ func (m *MockUseCase) EXPECT() *MockUseCaseMockRecorder {
 }
 
 // Create mocks base method
-func (m *MockUseCase) Create(e *entity.Product) (entity.ID, error) {
+func (m *MockUseCase) Create(p product.CreateProductDTO) (entity.ID, entity.Version, []string) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", e)
+	ret := m.ctrl.Call(m, "Create", p)
 	ret0, _ := ret[0].(entity.ID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(entity.Version)
+	ret2, _ := ret[2].([]string)
+	return ret0, ret1, ret2
 }
 
 // Create indicates an expected call of Create
-func (mr *MockUseCaseMockRecorder) Create(e interface{}) *gomock.Call {
+func (mr *MockUseCaseMockRecorder) Create(p interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUseCase)(nil).Create), e)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUseCase)(nil).Create), p)
 }
 
 // UpdateOne mocks base method
-func (m *MockUseCase) UpdateOne(id entity.ID, version int32, p *entity.UpdateProduct) (int32, error) {
+func (m *MockUseCase) UpdateOne(id entity.ID, v int32, updateProductDTO product.UpdateProductDTO) (int32, []string) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOne", id, version, p)
+	ret := m.ctrl.Call(m, "UpdateOne", id, v, updateProductDTO)
 	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].(error)
+	ret1, _ := ret[1].([]string)
 	return ret0, ret1
 }
 
 // UpdateOne indicates an expected call of UpdateOne
-func (mr *MockUseCaseMockRecorder) UpdateOne(id, version, p interface{}) *gomock.Call {
+func (mr *MockUseCaseMockRecorder) UpdateOne(id, v, updateProductDTO interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockUseCase)(nil).UpdateOne), id, version, p)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockUseCase)(nil).UpdateOne), id, v, updateProductDTO)
 }
 
 // Publish mocks base method

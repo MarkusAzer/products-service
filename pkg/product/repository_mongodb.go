@@ -29,11 +29,14 @@ func (r *MongoRepository) FindOneByID(id entity.ID) (*entity.Product, error) {
 	coll := r.db.Collection("products")
 	err := coll.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&result)
 
-	if err != nil { //TODO: check if we should remove it
-		return &result, err
+	switch err {
+	case nil:
+		return &result, nil
+	case mongo.ErrNoDocuments:
+		return nil, entity.ErrNotFound
+	default:
+		return nil, err
 	}
-
-	return &result, err
 }
 
 //StoreCommand persistence commands
@@ -46,7 +49,7 @@ func (r *MongoRepository) StoreCommand(c *entity.Command) (*entity.ID, error) {
 		return nil, err
 	}
 
-	str := result.InsertedID.(primitive.ObjectID).Hex()
+	str := result.InsertedID.(primitive.ObjectID).String()
 	id := entity.ID(str)
 
 	return &id, nil
@@ -62,7 +65,7 @@ func (r *MongoRepository) Create(p *entity.Product) (*entity.ID, error) {
 		return nil, err
 	}
 
-	str := result.InsertedID.(primitive.ObjectID).Hex()
+	str := result.InsertedID.(string)
 	id := entity.ID(str)
 
 	return &id, err

@@ -25,6 +25,9 @@ func check(err error) {
 	}
 }
 
+// Swagger https://medium.com/@ribice/serve-swaggerui-within-your-golang-application-5486748a5ed4
+//https://github.com/go-swagger/go-swagger/issues/370
+
 func main() {
 
 	mongoDatastore := mongodb.NewDatastore(config.DevConfig)
@@ -53,8 +56,9 @@ func main() {
 	//Middlewares
 	r.Use(middleware.Logging)
 	r.Use(handlers.CORS())
-	r.Use(middleware.ValidateHeaderType)
 	r.Use(middleware.Metrics(metricService))
+	r.Use(middleware.ValidateHeaderType)
+	r.Use(middleware.SetResHeaderType)
 
 	r.Handle("/metrics", promhttp.Handler())
 	r.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {

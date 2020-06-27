@@ -123,10 +123,10 @@ func (mr *MockstoreReaderMockRecorder) FindOneByID(id interface{}) *gomock.Call 
 }
 
 // FindOneByName mocks base method
-func (m *MockstoreReader) FindOneByName(name string) (entity.Brand, error) {
+func (m *MockstoreReader) FindOneByName(name string) (*entity.Brand, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindOneByName", name)
-	ret0, _ := ret[0].(entity.Brand)
+	ret0, _ := ret[0].(*entity.Brand)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -235,10 +235,10 @@ func (mr *MockStoreRepositoryMockRecorder) FindOneByID(id interface{}) *gomock.C
 }
 
 // FindOneByName mocks base method
-func (m *MockStoreRepository) FindOneByName(name string) (entity.Brand, error) {
+func (m *MockStoreRepository) FindOneByName(name string) (*entity.Brand, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindOneByName", name)
-	ret0, _ := ret[0].(entity.Brand)
+	ret0, _ := ret[0].(*entity.Brand)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -324,10 +324,10 @@ func (mr *MockUseCaseMockRecorder) FindOneByID(id interface{}) *gomock.Call {
 }
 
 // FindOneByName mocks base method
-func (m *MockUseCase) FindOneByName(name string) (entity.Brand, error) {
+func (m *MockUseCase) FindOneByName(name string) (*entity.Brand, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindOneByName", name)
-	ret0, _ := ret[0].(entity.Brand)
+	ret0, _ := ret[0].(*entity.Brand)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

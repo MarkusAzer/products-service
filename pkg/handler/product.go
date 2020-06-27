@@ -5,139 +5,124 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/MarkusAzer/products-service/pkg/entity"
 	"github.com/MarkusAzer/products-service/pkg/product"
 	"github.com/gorilla/mux"
 )
 
+//Validation specifies data serialization/deserialization protocol.
+
+// DisallowUnknownFields https://maori.geek.nz/golang-raise-error-if-unknown-field-in-json-with-exceptions-2b0caddecd1
+
 // Response struct which contains an API Response
 type Response struct {
-	Message     string                 `json:"message,omitempty"`
-	Validations []string               `json:"validations,omitempty"`
-	Data        map[string]interface{} `json:"data,omitempty"`
-	Successful  bool                   `json:"successful"`
+	Message    string                 `json:"message,omitempty"`
+	Data       map[string]interface{} `json:"data,omitempty"`
+	Errors     []string               `json:"errors,omitempty"`
+	Successful bool                   `json:"successful"`
 }
 
 func create(service product.UseCase) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		errorMessage := "Error adding Product"
-		//TODO: validate body
-		var p *entity.Product
-		err := json.NewDecoder(r.Body).Decode(&p)
-		//TODO: notify not allowed fields
+
+		var p product.CreateProductDTO
+		dec := json.NewDecoder(r.Body)
+		dec.DisallowUnknownFields() //WARNNING return only one unknown field
+
+		err := dec.Decode(&p)
+
 		switch {
 		case err == io.EOF:
+			payload, _ := json.Marshal(&Response{Errors: []string{"Provide valid Body"}, Successful: false})
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Provide valid Body"))
+			w.Write(payload)
+			return
+		case err != nil && strings.Contains(err.Error(), "json: unknown field"):
+			m := regexp.MustCompile(`\"(.*)\"`)
+			field := m.FindString(err.Error())
+
+			payload, _ := json.Marshal(&Response{Errors: []string{field + " : Not Allowed"}, Successful: false})
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write(payload)
 			return
 		case err != nil:
+			payload, _ := json.Marshal(&Response{Errors: []string{"Provide valid Body"}, Successful: false})
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Provide valid JSON"))
+			w.Write(payload)
 			return
 		}
 
-		// // Validate product
-		// validErrs := p.Validate()
-		// if len(validErrs) > 0 {
-		// 	response := Response{Message: "Validations Errors", Validations: validErrs, Successful: false}
+		ID, v, errs := service.Create(p)
 
-		// 	payload, err := json.Marshal(response)
-		// 	if err != nil {
-		// 		log.Println(err)
-		// 		w.WriteHeader(http.StatusInternalServerError)
-		// 		return
-		// 	}
-
-		// 	w.WriteHeader(http.StatusBadRequest)
-		// 	//TODO better middleware https://stackoverflow.com/questions/51456253/how-to-set-http-responsewriter-content-type-header-globally-for-all-api-endpoint
-		// 	w.Header().Add("Content-Type", "application/json")
-		// 	w.Write(payload)
-		// 	return
-		// }
-
-		p.ID, err = service.Create(p)
-		if err != nil {
-			log.Println(err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(errorMessage))
+		if len(errs) > 0 {
+			payload, _ := json.Marshal(&Response{Errors: errs, Successful: false})
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write(payload)
 			return
 		}
 
+		payload, _ := json.Marshal(&Response{Message: "Created Successfully", Data: map[string]interface{}{"id": ID, "version": v}, Successful: true})
 		w.WriteHeader(http.StatusCreated)
-		if err := json.NewEncoder(w).Encode(p); err != nil {
-			log.Println(err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(errorMessage))
-			return
-		}
+		w.Write(payload)
 	})
 }
 
 func update(service product.UseCase) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
 		vars := mux.Vars(r)
-		id := entity.ID(vars["id"])
+		ID := entity.ID(vars["id"])
 		version, err := strconv.Atoi(vars["version"])
 		if err != nil {
-			log.Println(err.Error())
+			payload, _ := json.Marshal(&Response{Errors: []string{"Internal Server Error"}, Successful: false})
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Provide Valid version value"))
+			w.Write(payload)
 			return
 		}
 
-		//TODO: validate body
-		//TODO: better approach https://www.alexedwards.net/blog/how-to-properly-parse-a-json-request-body
-		var p *entity.UpdateProduct
-		err = json.NewDecoder(r.Body).Decode(&p)
-		//TODO: notify not allowed fields
+		var p product.UpdateProductDTO
+		dec := json.NewDecoder(r.Body)
+		dec.DisallowUnknownFields() //WARNNING return only one unknown field
+
+		err = dec.Decode(&p)
+
 		switch {
 		case err == io.EOF:
+			payload, _ := json.Marshal(&Response{Errors: []string{"Provide valid Body"}, Successful: false})
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Provide valid Body"))
+			w.Write(payload)
+			return
+		case err != nil && strings.Contains(err.Error(), "json: unknown field"):
+			m := regexp.MustCompile(`\"(.*)\"`)
+			field := m.FindString(err.Error())
+
+			payload, _ := json.Marshal(&Response{Errors: []string{field + " : Not Allowed"}, Successful: false})
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write(payload)
 			return
 		case err != nil:
+			payload, _ := json.Marshal(&Response{Errors: []string{"Provide valid Body"}, Successful: false})
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Provide valid JSON"))
+			w.Write(payload)
 			return
 		}
 
-		// p.ID = id
-		// // Validate product
-		// validErrs := p.Validate()
-		// if len(validErrs) > 0 {
-		// 	response := Response{Message: "Validations Errors", Validations: validErrs, Successful: false}
+		v, errs := service.UpdateOne(ID, int32(version), p)
 
-		// 	payload, err := json.Marshal(response)
-		// 	if err != nil {
-		// 		log.Println(err)
-		// 		w.WriteHeader(http.StatusInternalServerError)
-		// 		return
-		// 	}
-
-		// 	w.WriteHeader(http.StatusBadRequest)
-		// 	//TODO better middleware https://stackoverflow.com/questions/51456253/how-to-set-http-responsewriter-content-type-header-globally-for-all-api-endpoint
-		// 	w.Header().Add("Content-Type", "application/json")
-		// 	w.Write(payload)
-		// 	return
-		//}
-
-		updatedVersion, err := service.UpdateOne(id, int32(version), p)
-		if err != nil {
-			log.Println(err.Error())
+		if len(errs) > 0 {
+			payload, _ := json.Marshal(&Response{Errors: errs, Successful: false})
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
+			w.Write(payload)
 			return
 		}
 
-		w.WriteHeader(http.StatusCreated)
-		if err := json.NewEncoder(w).Encode(p); err != nil {
-			log.Println(err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(strconv.Itoa(int(updatedVersion))))
-			return
-		}
+		payload, _ := json.Marshal(&Response{Message: "Updated Successfully", Data: map[string]interface{}{"id": ID, "version": v}, Successful: true})
+		w.WriteHeader(http.StatusAccepted)
+		w.Write(payload)
 	})
 }
 

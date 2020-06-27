@@ -36,16 +36,19 @@ func (r *MongoRepository) FindOneByID(id entity.ID) (entity.Brand, error) {
 }
 
 //FindOneByName find brand by Name
-func (r *MongoRepository) FindOneByName(name string) (entity.Brand, error) {
+func (r *MongoRepository) FindOneByName(name string) (*entity.Brand, error) {
 	result := entity.Brand{}
 	coll := r.db.Collection("brands")
 	err := coll.FindOne(context.TODO(), bson.M{"name": name}).Decode(&result)
 
-	if err != nil {
-		return result, err
+	switch err {
+	case nil:
+		return &result, nil
+	case mongo.ErrNoDocuments:
+		return nil, entity.ErrNotFound
+	default:
+		return nil, err
 	}
-
-	return result, nil
 }
 
 //Create create new Brand
