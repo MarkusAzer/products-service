@@ -1,4 +1,4 @@
-//go:generate mockgen -source interface.go -destination mock/product_mock.go -package productMock
+//go:generate mockgen -source interface.go -destination product_mock.go -package product
 
 package product
 
