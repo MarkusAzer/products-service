@@ -44,13 +44,13 @@ func NewService(msgR MessagesRepository, storeR StoreRepository, brandR brand.St
 
 //CreateProductDTO new product DTO
 type CreateProductDTO struct {
-	Name        string `json:"name" validate:"required,min=3"`
-	Description string `json:"description,omitempty" validate:"omitempty,min=20"`
-	Slug        string `json:"slug,omitempty" validate:"omitempty"` //TODO: find slug validation
-	Image       string `json:"image,omitempty" validate:"omitempty,uri"`
-	Brand       string `json:"brand,omitempty" validate:"omitempty"`
-	Category    string `json:"category,omitempty" validate:"omitempty"`
-	Price       int8   `json:"price,omitempty" validate:"omitempty,min=1"`
+	Name        string `json:"name" validate:"required,min=3" structs:"name,omitempty"`
+	Description string `json:"description,omitempty" validate:"omitempty,min=20" structs:"description,omitempty"`
+	Slug        string `json:"slug,omitempty" validate:"omitempty" structs:"slug,omitempty"` //TODO: find slug validation
+	Image       string `json:"image,omitempty" validate:"omitempty,uri" structs:"image,omitempty"`
+	Brand       string `json:"brand,omitempty" validate:"omitempty" structs:"brand,omitempty"`
+	Category    string `json:"category,omitempty" validate:"omitempty" structs:"category,omitempty"`
+	Price       int8   `json:"price,omitempty" validate:"omitempty,min=1" structs:"price,omitempty"`
 }
 
 //Create new product
@@ -202,8 +202,6 @@ func (s *Service) Create(createProductDTO CreateProductDTO) (entity.ID, entity.V
 					Payload:   payload,
 					Timestamp: Timestamp})
 			}
-		default:
-			fmt.Println("=>>>>>> no case")
 		}
 	}
 
@@ -221,6 +219,7 @@ func (s *Service) Create(createProductDTO CreateProductDTO) (entity.ID, entity.V
 		Brand:       createProductDTO.Brand,
 		Category:    createProductDTO.Category,
 		Price:       createProductDTO.Price,
+		Status:      "unpublish", // Init the product as unpublish
 		CreatedAt:   Timestamp,
 	}
 
@@ -233,9 +232,7 @@ func (s *Service) Create(createProductDTO CreateProductDTO) (entity.ID, entity.V
 	// var newMap map[string]interface{}
 	// err = json.Unmarshal(data, &newMap) // Convert to a map
 
-	//TODO: check if we should store product struct or createProductDTO
-	c := &entity.Command{AggregateID: string(ID), Type: "CreateProduct", Payload: structs.Map(p), Timestamp: Timestamp}
-	//TODO: Use transactions
+	c := &entity.Command{AggregateID: string(ID), Type: "CreateProduct", Payload: structs.Map(createProductDTO), Timestamp: Timestamp}
 	_, err := s.storeRepo.StoreCommand(c)
 	if err != nil {
 		return "", 1, []string{"Internal Server Error"}
@@ -246,9 +243,6 @@ func (s *Service) Create(createProductDTO CreateProductDTO) (entity.ID, entity.V
 		return "", 1, []string{"Internal Server Error"}
 	}
 
-	//TODO:handle failure cases
-	// m := &entity.Message{ID: string(ID), Type: "PRODUCT_CREATED", Version: 1, Payload: newMap, Timestamp: Timestamp}
-	// s.msgRepo.SendMessage(m)
 	s.msgRepo.SendMessages(messages)
 
 	return ID, p.Version, nil
@@ -256,12 +250,15 @@ func (s *Service) Create(createProductDTO CreateProductDTO) (entity.ID, entity.V
 
 //UpdateProductDTO new product DTO
 type UpdateProductDTO struct {
-	Name        string `json:"name,omitempty" validate:"omitempty,required,min=3"`
-	Description string `json:"description,omitempty" validate:"omitempty,min=20"`
-	Slug        string `json:"slug,omitempty" validate:"omitempty"` //TODO: find slug validation
-	Image       string `json:"image,omitempty" validate:"omitempty,uri"`
-	Brand       string `json:"brand,omitempty" validate:"omitempty"`
-	Category    string `json:"category,omitempty" validate:"omitempty"`
+	// Version		entity.Version `json:"_V,omitempty" validate:"omitempty,required,min=3"`
+	Name        string `json:"name,omitempty" validate:"omitempty,required,min=3" structs:"name,omitempty"`
+	Description string `json:"description,omitempty" validate:"omitempty,min=20" structs:"description,omitempty"`
+	Slug        string `json:"slug,omitempty" validate:"omitempty" structs:"slug,omitempty"` //TODO: find slug validation
+	Image       string `json:"image,omitempty" validate:"omitempty,uri" structs:"image,omitempty"`
+	Brand       string `json:"brand,omitempty" validate:"omitempty" structs:"brand,omitempty"`
+	Category    string `json:"category,omitempty" validate:"omitempty" structs:"category,omitempty"`
+	Status      string `json:"status,omitempty" validate:"omitempty,oneof=publish unpublish" structs:"status,omitempty"`
+	Price       int8   `json:"price,omitempty" validate:"omitempty" structs:"price,omitempty"`
 }
 
 //UpdateOne product
@@ -311,7 +308,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 		case "Name":
 			if value.String() != "" {
 				if p.Name == updateProductDTO.Name {
-					errs = append(errs, "Category already updated")
+					errs = append(errs, "Name already updated")
 				}
 				version++
 
@@ -422,6 +419,50 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 					Payload:   payload,
 					Timestamp: Timestamp})
 			}
+		case "Status":
+			if value.String() != "" {
+				if p.Status == updateProductDTO.Status {
+					errs = append(errs, "Status already updated")
+				}
+				version++
+
+				payload := make(map[string]interface{})
+				payload["status"] = value.String()
+
+				if updateProductDTO.Status == "publish" {
+					messages = append(messages, &entity.Message{
+						ID:        string(ID),
+						Type:      "PRODUCT_PUBLISHED",
+						Version:   version,
+						Payload:   payload,
+						Timestamp: Timestamp})
+
+				} else {
+					messages = append(messages, &entity.Message{
+						ID:        string(ID),
+						Type:      "PRODUCT_UNPUBLISHED",
+						Version:   version,
+						Payload:   payload,
+						Timestamp: Timestamp})
+				}
+			}
+		case "Price":
+			if value.Int() != 0 {
+				if p.Price == updateProductDTO.Price {
+					errs = append(errs, "Price already updated")
+				}
+				version++
+
+				payload := make(map[string]interface{})
+				payload["price"] = value.Int()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_PRICE_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
 		}
 	}
 
@@ -444,6 +485,8 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 		Image:       updateProductDTO.Image,
 		Brand:       updateProductDTO.Brand,
 		Category:    updateProductDTO.Category,
+		Status:      updateProductDTO.Status,
+		Price:       updateProductDTO.Price,
 	}
 
 	//TODO Patch the update
@@ -455,27 +498,27 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 	return int32(version), nil
 }
 
-//Publish publish product
-func (s *Service) Publish(ID entity.ID, v int32) (int32, error) {
+//Publish publish product //** DEPRECATED **//
+func (s *Service) Publish(ID entity.ID, v int32) (int32, []string) {
 	Timestamp := time.Now()
 	version := entity.Version(v)
 
-	//TODO check Transactions
 	p, err := s.storeRepo.FindOneByID(ID)
-	if err != nil {
-		fmt.Println(err)
-		return 0, err
+	switch err {
+	case entity.ErrNotFound:
+		return 0, []string{"Product with id " + string(ID) + " Not found"}
+	default:
+		if err != nil {
+			return 0, []string{"Internal Server Error"}
+		}
 	}
 
 	if version != p.Version {
-		fmt.Println("miss matching version")
-		return 0, errors.New("miss matching version")
+		return 0, []string{"Version conflict"}
 	}
 
-	//TODO: create status map
 	if p.Status == "Publish" {
-		fmt.Println("Product is already published")
-		return 0, errors.New("Product is already published")
+		return 0, []string{"Product is already published"}
 	}
 
 	newMap := make(map[string]interface{})
@@ -498,7 +541,7 @@ func (s *Service) Publish(ID entity.ID, v int32) (int32, error) {
 	return int32(version), nil
 }
 
-//Unpublish unpublish product
+//Unpublish unpublish product //** DEPRECATED **//
 func (s *Service) Unpublish(ID entity.ID, v int32) (int32, error) {
 	Timestamp := time.Now()
 	version := entity.Version(v)
@@ -541,7 +584,7 @@ func (s *Service) Unpublish(ID entity.ID, v int32) (int32, error) {
 	return int32(version), nil
 }
 
-//UpdatePrice product price
+//UpdatePrice product price //** DEPRECATED **//
 func (s *Service) UpdatePrice(ID entity.ID, v int32, price int) (int32, error) {
 	Timestamp := time.Now()
 	version := entity.Version(v)

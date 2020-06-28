@@ -455,11 +455,11 @@ func (mr *MockwriterMockRecorder) UpdateOne(id, v, updateProductDTO interface{})
 }
 
 // Publish mocks base method
-func (m *Mockwriter) Publish(id entity.ID, version int32) (int32, error) {
+func (m *Mockwriter) Publish(id entity.ID, version int32) (int32, []string) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Publish", id, version)
 	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].(error)
+	ret1, _ := ret[1].([]string)
 	return ret0, ret1
 }
 
@@ -568,11 +568,11 @@ func (mr *MockUseCaseMockRecorder) UpdateOne(id, v, updateProductDTO interface{}
 }
 
 // Publish mocks base method
-func (m *MockUseCase) Publish(id entity.ID, version int32) (int32, error) {
+func (m *MockUseCase) Publish(id entity.ID, version int32) (int32, []string) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Publish", id, version)
 	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].(error)
+	ret1, _ := ret[1].([]string)
 	return ret0, ret1
 }
 

@@ -126,31 +126,34 @@ func update(service product.UseCase) http.Handler {
 	})
 }
 
+//** DEPRECATED **//
 func publish(service product.UseCase) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		id := entity.ID(vars["id"])
+		ID := entity.ID(vars["id"])
 		version, err := strconv.Atoi(vars["version"])
 		if err != nil {
-			log.Println(err.Error())
+			payload, _ := json.Marshal(&Response{Errors: []string{"Internal Server Error"}, Successful: false})
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Provide Valid version value"))
+			w.Write(payload)
 			return
 		}
 
-		updatedVersion, err := service.Publish(id, int32(version))
-		if err != nil {
-			log.Println(err.Error())
+		v, errs := service.Publish(ID, int32(version))
+		if len(errs) > 0 {
+			payload, _ := json.Marshal(&Response{Errors: errs, Successful: false})
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
+			w.Write(payload)
 			return
 		}
 
+		payload, _ := json.Marshal(&Response{Message: "Updated Successfully", Data: map[string]interface{}{"id": ID, "version": v}, Successful: true})
 		w.WriteHeader(http.StatusAccepted)
-		w.Write([]byte(strconv.Itoa(int(updatedVersion))))
+		w.Write(payload)
 	})
 }
 
+//** DEPRECATED **//
 func unpublish(service product.UseCase) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -176,6 +179,7 @@ func unpublish(service product.UseCase) http.Handler {
 	})
 }
 
+//** DEPRECATED **//
 func updatePrice(service product.UseCase) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -243,9 +247,9 @@ func delete(service product.UseCase) http.Handler {
 //MakeProductHandlers make url handlers
 func MakeProductHandlers(r *mux.Router, service product.UseCase) {
 	r.Handle("/v1/products/command/create", create(service)).Methods("POST", "OPTIONS").Name("CreateProduct")
-	r.Handle("/v1/products/command/{id}/{version}/update", update(service)).Methods("POST", "OPTIONS").Name("UpdateProduct")
-	r.Handle("/v1/products/command/{id}/{version}/publish", publish(service)).Methods("POST", "OPTIONS").Name("PublishProduct")
-	r.Handle("/v1/products/command/{id}/{version}/unpublish", unpublish(service)).Methods("POST", "OPTIONS").Name("UnpublishProduct")
-	r.Handle("/v1/products/command/{id}/{version}/update-price", updatePrice(service)).Methods("POST", "OPTIONS").Name("UpdatePrice")
-	r.Handle("/v1/products/command/{id}/{version}/delete", delete(service)).Methods("POST", "OPTIONS").Name("DeleteProduct")
+	r.Handle("/v1/products/command/{id}/{version}/update", update(service)).Methods("PATCH", "OPTIONS").Name("UpdateProduct")
+	// r.Handle("/v1/products/command/{id}/{version}/publish", publish(service)).Methods("POST", "OPTIONS").Name("PublishProduct")
+	// r.Handle("/v1/products/command/{id}/{version}/unpublish", unpublish(service)).Methods("POST", "OPTIONS").Name("UnpublishProduct")
+	// r.Handle("/v1/products/command/{id}/{version}/update-price", updatePrice(service)).Methods("POST", "OPTIONS").Name("UpdatePrice")
+	r.Handle("/v1/products/command/{id}/{version}/delete", delete(service)).Methods("DELETE", "OPTIONS").Name("DeleteProduct")
 }

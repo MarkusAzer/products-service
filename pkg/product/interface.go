@@ -48,7 +48,7 @@ type reader interface {
 type writer interface {
 	Create(p CreateProductDTO) (entity.ID, entity.Version, []string)
 	UpdateOne(id entity.ID, v int32, updateProductDTO UpdateProductDTO) (int32, []string)
-	Publish(id entity.ID, version int32) (int32, error)
+	Publish(id entity.ID, version int32) (int32, []string)
 	Unpublish(id entity.ID, version int32) (int32, error)
 	UpdatePrice(id entity.ID, version int32, price int) (int32, error)
 	Delete(id entity.ID, version int32) error
