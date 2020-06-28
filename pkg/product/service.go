@@ -475,7 +475,10 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 	}
 
 	c := &entity.Command{AggregateID: string(ID), Type: "UpdateProduct", Payload: structs.Map(updateProductDTO), Timestamp: Timestamp}
-	s.storeRepo.StoreCommand(c)
+	_, err = s.storeRepo.StoreCommand(c)
+	if err != nil {
+		return 0, []string{"Internal Server Error"}
+	}
 
 	up := &entity.UpdateProduct{
 		Version:     version,
@@ -489,8 +492,14 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 		Price:       updateProductDTO.Price,
 	}
 
-	//TODO Patch the update
-	s.storeRepo.UpdateOneP(ID, up, entity.Version(v))
+	updatedNum, err := s.storeRepo.UpdateOneP(ID, up, entity.Version(v))
+	if err != nil {
+		return 0, []string{"Internal Server Error"}
+	}
+
+	if updatedNum != 1 {
+		return 0, []string{"Version conflict"}
+	}
 
 	//TODO:handle failure cases
 	s.msgRepo.SendMessages(messages)
