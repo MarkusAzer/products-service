@@ -3,7 +3,7 @@ package product
 import (
 	"context"
 
-	"github.com/MarkusAzer/products-service/pkg/entity"
+	"github.com/markus-azer/products-service/pkg/entity"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

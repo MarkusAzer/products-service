@@ -3,7 +3,7 @@
 package brand
 
 import (
-	"github.com/MarkusAzer/products-service/pkg/entity"
+	"github.com/markus-azer/products-service/pkg/entity"
 )
 
 //messagesReader brand reader interface

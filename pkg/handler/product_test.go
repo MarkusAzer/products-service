@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/MarkusAzer/products-service/pkg/entity"
-	"github.com/MarkusAzer/products-service/pkg/product"
 	"github.com/golang/mock/gomock"
 	"github.com/gorilla/mux"
+	"github.com/markus-azer/products-service/pkg/entity"
+	"github.com/markus-azer/products-service/pkg/product"
 	"github.com/stretchr/testify/assert"
 )
 

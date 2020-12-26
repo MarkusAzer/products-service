@@ -6,10 +6,10 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/MarkusAzer/products-service/pkg/brand"
-	"github.com/MarkusAzer/products-service/pkg/entity"
 	"github.com/fatih/structs"
 	"github.com/go-playground/validator"
+	"github.com/markus-azer/products-service/pkg/brand"
+	"github.com/markus-azer/products-service/pkg/entity"
 )
 
 // Validation in Application layer
@@ -47,10 +47,12 @@ type CreateProductDTO struct {
 	Name        string `json:"name" validate:"required,min=3" structs:"name,omitempty"`
 	Description string `json:"description,omitempty" validate:"omitempty,min=20" structs:"description,omitempty"`
 	Slug        string `json:"slug,omitempty" validate:"omitempty" structs:"slug,omitempty"` //TODO: find slug validation
+	Location    string `json:"location,omitempty" validate:"omitempty" structs:"location,omitempty"`
 	Image       string `json:"image,omitempty" validate:"omitempty,uri" structs:"image,omitempty"`
 	Brand       string `json:"brand,omitempty" validate:"omitempty" structs:"brand,omitempty"`
 	Category    string `json:"category,omitempty" validate:"omitempty" structs:"category,omitempty"`
 	Price       int8   `json:"price,omitempty" validate:"omitempty,min=1" structs:"price,omitempty"`
+	Seller      string `json:"seller,omitempty" validate:"required" structs:"seller,omitempty"`
 }
 
 //Create new product
@@ -75,11 +77,13 @@ func (s *Service) Create(createProductDTO CreateProductDTO) (entity.ID, entity.V
 	var messages []*entity.Message
 	var version entity.Version = 1
 
+	payload := make(map[string]interface{})
+	payload["seller"] = createProductDTO.Seller
 	messages = append(messages, &entity.Message{
 		ID:        string(ID),
 		Type:      "PRODUCT_DRAFT_CREATED",
 		Version:   version,
-		Payload:   make(map[string]interface{}),
+		Payload:   payload,
 		Timestamp: Timestamp},
 	)
 
@@ -131,6 +135,20 @@ func (s *Service) Create(createProductDTO CreateProductDTO) (entity.ID, entity.V
 				messages = append(messages, &entity.Message{
 					ID:        string(ID),
 					Type:      "PRODUCT_SLUG_UPDATED",
+					Version:   version,
+					Payload:   payload,
+					Timestamp: Timestamp})
+			}
+		case "Location":
+			if value.String() != "" {
+				version++
+
+				payload := make(map[string]interface{})
+				payload["location"] = value.String()
+
+				messages = append(messages, &entity.Message{
+					ID:        string(ID),
+					Type:      "PRODUCT_Location_UPDATED",
 					Version:   version,
 					Payload:   payload,
 					Timestamp: Timestamp})
@@ -251,9 +269,10 @@ func (s *Service) Create(createProductDTO CreateProductDTO) (entity.ID, entity.V
 //UpdateProductDTO new product DTO
 type UpdateProductDTO struct {
 	// Version		entity.Version `json:"_V,omitempty" validate:"omitempty,required,min=3"`
-	Name        string `json:"name,omitempty" validate:"omitempty,required,min=3" structs:"name,omitempty"`
+	Name        string `json:"name,omitempty" validate:"omitempty,min=3" structs:"name,omitempty"`
 	Description string `json:"description,omitempty" validate:"omitempty,min=20" structs:"description,omitempty"`
 	Slug        string `json:"slug,omitempty" validate:"omitempty" structs:"slug,omitempty"` //TODO: find slug validation
+	Location    string `json:"location,omitempty" bson:"location,omitempty"`
 	Image       string `json:"image,omitempty" validate:"omitempty,uri" structs:"image,omitempty"`
 	Brand       string `json:"brand,omitempty" validate:"omitempty" structs:"brand,omitempty"`
 	Category    string `json:"category,omitempty" validate:"omitempty" structs:"category,omitempty"`

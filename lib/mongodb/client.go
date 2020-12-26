@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/MarkusAzer/products-service/config"
+	"github.com/markus-azer/products-service/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"

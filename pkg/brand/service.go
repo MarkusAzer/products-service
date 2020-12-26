@@ -1,6 +1,6 @@
 package brand
 
-import "github.com/MarkusAzer/products-service/pkg/entity"
+import "github.com/markus-azer/products-service/pkg/entity"
 
 //Service service interface
 type Service struct {

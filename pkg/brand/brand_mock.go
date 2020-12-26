@@ -5,7 +5,7 @@
 package brand
 
 import (
-	entity "github.com/MarkusAzer/products-service/pkg/entity"
+	entity "github.com/markus-azer/products-service/pkg/entity"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )

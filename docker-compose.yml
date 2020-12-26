@@ -1,6 +1,29 @@
 # docker-compose -f ./docker-compose.yml up -d
 version: '2'
 services:
+  prometheus:
+    image: prom/prometheus
+    # container_name: prometheus3
+    volumes:
+      - ./infrastructure/mount/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9999:9090"
+    links:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+
+  grafana:
+    image: grafana/grafana
+    # container_name: grafana3
+    ports:
+      - "3333:3000"
+    volumes:
+      - ./infrastructure/grafana.ini:/etc/grafana/grafana.ini
+    #   - ./infrastructure/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+    links:
+      - prometheus
+
   kafdrop:
     image: obsidiandynamics/kafdrop
     restart: "no"
@@ -9,8 +32,8 @@ services:
     environment:
       KAFKA_BROKERCONNECT: "kafka-1:29092"
       JVM_OPTS: "-Xms16M -Xmx48M -Xss180K -XX:-TieredCompilation -XX:+UseStringDeduplication -noverify"
-    depends_on:
-      - "kafka-1"
+    # depends_on:
+    #   - "kafka-1"
 
   zookeeper:
     image: wurstmeister/zookeeper
@@ -23,12 +46,10 @@ services:
       - "9095:9092"
     environment:
       # For more details see See https://rmoff.net/2018/08/02/kafka-listeners-explained/
-
       KAFKA_LISTENERS: LISTENER_BOB://kafka0:29092,LISTENER_FRED://kafka0:9092,LISTENER_ALICE://kafka0:29094
       KAFKA_ADVERTISED_LISTENERS: LISTENER_BOB://kafka0:29092,LISTENER_FRED://localhost:9092,LISTENER_ALICE://never-gonna-give-you-up:29094
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_BOB:PLAINTEXT,LISTENER_FRED:PLAINTEXT,LISTENER_ALICE:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_BOB
-
       KAFKA_LISTENERS: LISTENER_BOB://kafka-1:29092,LISTENER_FRED://kafka-1:9092
       KAFKA_ADVERTISED_LISTENERS: LISTENER_BOB://kafka-1:29092,LISTENER_FRED://localhost:9095
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_BOB:PLAINTEXT,LISTENER_FRED:PLAINTEXT

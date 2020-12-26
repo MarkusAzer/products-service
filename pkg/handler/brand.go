@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/MarkusAzer/products-service/pkg/entity"
+	"github.com/markus-azer/products-service/pkg/entity"
 
-	"github.com/MarkusAzer/products-service/pkg/brand"
+	"github.com/markus-azer/products-service/pkg/brand"
 )
 
 //MakeBrandHandlers make msg handlers
@@ -21,7 +21,7 @@ func MakeBrandHandlers(msgRepo brand.MessagesRepository, service brand.UseCase) 
 				b := &entity.Brand{
 					ID:      entity.ID(msg.ID),
 					Version: msg.Version,
-					// Name:        msg.Payload["Name"],
+					//Name:        msg.Payload["Name"],
 					// Description: msg.Payload["Description"],
 					// Slug:        msg.Payload["Slug"],
 					// CreatedAt:   msg.Payload["CreatedAt"],

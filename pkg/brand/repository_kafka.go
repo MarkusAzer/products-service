@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/MarkusAzer/products-service/pkg/entity"
+	"github.com/markus-azer/products-service/pkg/entity"
 
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )

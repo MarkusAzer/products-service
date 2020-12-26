@@ -2,7 +2,7 @@
 
 package product
 
-import "github.com/MarkusAzer/products-service/pkg/entity"
+import "github.com/markus-azer/products-service/pkg/entity"
 
 //MessagesReader Reader interface
 type messagesReader interface {

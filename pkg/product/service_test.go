@@ -3,9 +3,9 @@ package product
 import (
 	"testing"
 
-	"github.com/MarkusAzer/products-service/pkg/brand"
-	"github.com/MarkusAzer/products-service/pkg/entity"
 	"github.com/golang/mock/gomock"
+	"github.com/markus-azer/products-service/pkg/brand"
+	"github.com/markus-azer/products-service/pkg/entity"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/MarkusAzer/products-service/pkg/metric"
+	"github.com/markus-azer/products-service/pkg/metric"
 )
 
 type metricsHandler struct {

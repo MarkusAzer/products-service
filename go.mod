@@ -1,4 +1,4 @@
-module github.com/MarkusAzer/products-service
+module github.com/markus-azer/products-service
 
 go 1.14
 

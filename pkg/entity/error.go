@@ -25,3 +25,6 @@ func (c *CustomError) Error() string {
 
 //ErrNotFound not found
 var ErrNotFound = errors.New("Not found")
+
+//ClientError ClientError
+type ClientError string

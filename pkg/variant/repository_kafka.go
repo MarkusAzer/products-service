@@ -1,4 +1,4 @@
-package product
+package variant
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
-//KafkaRepository mongodb repo
+//KafkaRepository KafkaRepository
 type KafkaRepository struct {
 	producer *kafka.Producer
 }

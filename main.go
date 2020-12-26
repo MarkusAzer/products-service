@@ -5,18 +5,19 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/MarkusAzer/products-service/config"
+	"github.com/markus-azer/products-service/config"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	kafkaStore "github.com/MarkusAzer/products-service/lib/kafka"
-	"github.com/MarkusAzer/products-service/lib/mongodb"
-	"github.com/MarkusAzer/products-service/pkg/brand"
-	"github.com/MarkusAzer/products-service/pkg/handler"
-	"github.com/MarkusAzer/products-service/pkg/metric"
-	"github.com/MarkusAzer/products-service/pkg/middleware"
-	"github.com/MarkusAzer/products-service/pkg/product"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	kafkaStore "github.com/markus-azer/products-service/lib/kafka"
+	"github.com/markus-azer/products-service/lib/mongodb"
+	"github.com/markus-azer/products-service/pkg/brand"
+	"github.com/markus-azer/products-service/pkg/handler"
+	"github.com/markus-azer/products-service/pkg/metric"
+	"github.com/markus-azer/products-service/pkg/middleware"
+	"github.com/markus-azer/products-service/pkg/product"
+	"github.com/markus-azer/products-service/pkg/variant"
 )
 
 func check(err error) {
@@ -42,10 +43,14 @@ func main() {
 	productStoreRepo := product.NewMongoRepository(mongoDatastore.Db)
 	productMsgRepo := product.NewKafkaRepository(client.Producer)
 
+	variantStoreRepo := variant.NewMongoRepository(mongoDatastore.Db)
+	variantMsgRepo := variant.NewKafkaRepository(client.Producer)
+
 	brandStoreRepo := brand.NewMongoRepository(mongoDatastore.Db)
 	brandMsgRepo := brand.NewKafkaRepository(client.Consumer)
 
 	productService := product.NewService(productMsgRepo, productStoreRepo, brandStoreRepo)
+	variantService := variant.NewService(variantMsgRepo, variantStoreRepo, productStoreRepo)
 	brandService := brand.NewService(brandStoreRepo)
 
 	metricService, err := metric.NewPrometheusService()
@@ -68,6 +73,7 @@ func main() {
 	// Route Handlers - Endpoints
 	handler.MakeProductHandlers(r, productService)
 	handler.MakeBrandHandlers(brandMsgRepo, brandService)
+	handler.MakeVariantHandlers(r, variantService)
 
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

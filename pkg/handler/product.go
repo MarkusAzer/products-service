@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MarkusAzer/products-service/pkg/entity"
-	"github.com/MarkusAzer/products-service/pkg/product"
 	"github.com/gorilla/mux"
+	"github.com/markus-azer/products-service/pkg/entity"
+	"github.com/markus-azer/products-service/pkg/product"
 )
 
 //Validation specifies data serialization/deserialization protocol.
@@ -226,21 +226,23 @@ func delete(service product.UseCase) http.Handler {
 		id := entity.ID(vars["id"])
 		version, err := strconv.Atoi(vars["version"])
 		if err != nil {
-			log.Println(err.Error())
+			payload, _ := json.Marshal(&Response{Errors: []string{"Provide Valid version value"}, Successful: false})
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Provide Valid version value"))
+			w.Write(payload)
 			return
 		}
 
 		err = service.Delete(id, int32(version))
 		if err != nil {
-			log.Println(err.Error())
+			payload, _ := json.Marshal(&Response{Errors: []string{err.Error()}, Successful: false})
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
+			w.Write(payload)
 			return
 		}
 
+		payload, _ := json.Marshal(&Response{Message: "Deleted Successfully", Data: map[string]interface{}{}, Successful: true})
 		w.WriteHeader(http.StatusAccepted)
+		w.Write(payload)
 	})
 }
 
