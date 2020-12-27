@@ -7,6 +7,7 @@ package product
 import (
 	gomock "github.com/golang/mock/gomock"
 	entity "github.com/markus-azer/products-service/pkg/entity"
+	variant "github.com/markus-azer/products-service/pkg/variant"
 	reflect "reflect"
 )
 
@@ -151,10 +152,10 @@ func (m *MockstoreReader) EXPECT() *MockstoreReaderMockRecorder {
 }
 
 // FindOneByID mocks base method
-func (m *MockstoreReader) FindOneByID(id entity.ID) (*entity.Product, error) {
+func (m *MockstoreReader) FindOneByID(id entity.ID) (*entity.Variant, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindOneByID", id)
-	ret0, _ := ret[0].(*entity.Product)
+	ret0, _ := ret[0].(*entity.Variant)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -163,6 +164,21 @@ func (m *MockstoreReader) FindOneByID(id entity.ID) (*entity.Product, error) {
 func (mr *MockstoreReaderMockRecorder) FindOneByID(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOneByID", reflect.TypeOf((*MockstoreReader)(nil).FindOneByID), id)
+}
+
+// FindOneByAttribute mocks base method
+func (m *MockstoreReader) FindOneByAttribute(product entity.ID, attributes map[string]string) (*entity.Variant, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindOneByAttribute", product, attributes)
+	ret0, _ := ret[0].(*entity.Variant)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindOneByAttribute indicates an expected call of FindOneByAttribute
+func (mr *MockstoreReaderMockRecorder) FindOneByAttribute(product, attributes interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOneByAttribute", reflect.TypeOf((*MockstoreReader)(nil).FindOneByAttribute), product, attributes)
 }
 
 // MockstoreWriter is a mock of storeWriter interface
@@ -204,63 +220,48 @@ func (mr *MockstoreWriterMockRecorder) StoreCommand(c interface{}) *gomock.Call 
 }
 
 // Create mocks base method
-func (m *MockstoreWriter) Create(p *entity.Product) (*entity.ID, error) {
+func (m *MockstoreWriter) Create(variant *entity.Variant) (*entity.ID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", p)
+	ret := m.ctrl.Call(m, "Create", variant)
 	ret0, _ := ret[0].(*entity.ID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create
-func (mr *MockstoreWriterMockRecorder) Create(p interface{}) *gomock.Call {
+func (mr *MockstoreWriterMockRecorder) Create(variant interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockstoreWriter)(nil).Create), p)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockstoreWriter)(nil).Create), variant)
 }
 
 // UpdateOne mocks base method
-func (m *MockstoreWriter) UpdateOne(id entity.ID, p *entity.Product, v entity.Version) (int, error) {
+func (m *MockstoreWriter) UpdateOne(id entity.ID, variant *entity.UpdateVariant, version entity.Version) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOne", id, p, v)
+	ret := m.ctrl.Call(m, "UpdateOne", id, variant, version)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateOne indicates an expected call of UpdateOne
-func (mr *MockstoreWriterMockRecorder) UpdateOne(id, p, v interface{}) *gomock.Call {
+func (mr *MockstoreWriterMockRecorder) UpdateOne(id, variant, version interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockstoreWriter)(nil).UpdateOne), id, p, v)
-}
-
-// UpdateOneP mocks base method
-func (m *MockstoreWriter) UpdateOneP(id entity.ID, p *entity.UpdateProduct, v entity.Version) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOneP", id, p, v)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdateOneP indicates an expected call of UpdateOneP
-func (mr *MockstoreWriterMockRecorder) UpdateOneP(id, p, v interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOneP", reflect.TypeOf((*MockstoreWriter)(nil).UpdateOneP), id, p, v)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockstoreWriter)(nil).UpdateOne), id, variant, version)
 }
 
 // DeleteOne mocks base method
-func (m *MockstoreWriter) DeleteOne(id entity.ID, v entity.Version) (int, error) {
+func (m *MockstoreWriter) DeleteOne(id entity.ID, version entity.Version) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteOne", id, v)
+	ret := m.ctrl.Call(m, "DeleteOne", id, version)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DeleteOne indicates an expected call of DeleteOne
-func (mr *MockstoreWriterMockRecorder) DeleteOne(id, v interface{}) *gomock.Call {
+func (mr *MockstoreWriterMockRecorder) DeleteOne(id, version interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOne", reflect.TypeOf((*MockstoreWriter)(nil).DeleteOne), id, v)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOne", reflect.TypeOf((*MockstoreWriter)(nil).DeleteOne), id, version)
 }
 
 // MockStoreRepository is a mock of StoreRepository interface
@@ -287,10 +288,10 @@ func (m *MockStoreRepository) EXPECT() *MockStoreRepositoryMockRecorder {
 }
 
 // FindOneByID mocks base method
-func (m *MockStoreRepository) FindOneByID(id entity.ID) (*entity.Product, error) {
+func (m *MockStoreRepository) FindOneByID(id entity.ID) (*entity.Variant, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindOneByID", id)
-	ret0, _ := ret[0].(*entity.Product)
+	ret0, _ := ret[0].(*entity.Variant)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -299,6 +300,21 @@ func (m *MockStoreRepository) FindOneByID(id entity.ID) (*entity.Product, error)
 func (mr *MockStoreRepositoryMockRecorder) FindOneByID(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOneByID", reflect.TypeOf((*MockStoreRepository)(nil).FindOneByID), id)
+}
+
+// FindOneByAttribute mocks base method
+func (m *MockStoreRepository) FindOneByAttribute(product entity.ID, attributes map[string]string) (*entity.Variant, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindOneByAttribute", product, attributes)
+	ret0, _ := ret[0].(*entity.Variant)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindOneByAttribute indicates an expected call of FindOneByAttribute
+func (mr *MockStoreRepositoryMockRecorder) FindOneByAttribute(product, attributes interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOneByAttribute", reflect.TypeOf((*MockStoreRepository)(nil).FindOneByAttribute), product, attributes)
 }
 
 // StoreCommand mocks base method
@@ -317,63 +333,48 @@ func (mr *MockStoreRepositoryMockRecorder) StoreCommand(c interface{}) *gomock.C
 }
 
 // Create mocks base method
-func (m *MockStoreRepository) Create(p *entity.Product) (*entity.ID, error) {
+func (m *MockStoreRepository) Create(variant *entity.Variant) (*entity.ID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", p)
+	ret := m.ctrl.Call(m, "Create", variant)
 	ret0, _ := ret[0].(*entity.ID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create
-func (mr *MockStoreRepositoryMockRecorder) Create(p interface{}) *gomock.Call {
+func (mr *MockStoreRepositoryMockRecorder) Create(variant interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockStoreRepository)(nil).Create), p)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockStoreRepository)(nil).Create), variant)
 }
 
 // UpdateOne mocks base method
-func (m *MockStoreRepository) UpdateOne(id entity.ID, p *entity.Product, v entity.Version) (int, error) {
+func (m *MockStoreRepository) UpdateOne(id entity.ID, variant *entity.UpdateVariant, version entity.Version) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOne", id, p, v)
+	ret := m.ctrl.Call(m, "UpdateOne", id, variant, version)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateOne indicates an expected call of UpdateOne
-func (mr *MockStoreRepositoryMockRecorder) UpdateOne(id, p, v interface{}) *gomock.Call {
+func (mr *MockStoreRepositoryMockRecorder) UpdateOne(id, variant, version interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockStoreRepository)(nil).UpdateOne), id, p, v)
-}
-
-// UpdateOneP mocks base method
-func (m *MockStoreRepository) UpdateOneP(id entity.ID, p *entity.UpdateProduct, v entity.Version) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOneP", id, p, v)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdateOneP indicates an expected call of UpdateOneP
-func (mr *MockStoreRepositoryMockRecorder) UpdateOneP(id, p, v interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOneP", reflect.TypeOf((*MockStoreRepository)(nil).UpdateOneP), id, p, v)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockStoreRepository)(nil).UpdateOne), id, variant, version)
 }
 
 // DeleteOne mocks base method
-func (m *MockStoreRepository) DeleteOne(id entity.ID, v entity.Version) (int, error) {
+func (m *MockStoreRepository) DeleteOne(id entity.ID, version entity.Version) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteOne", id, v)
+	ret := m.ctrl.Call(m, "DeleteOne", id, version)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DeleteOne indicates an expected call of DeleteOne
-func (mr *MockStoreRepositoryMockRecorder) DeleteOne(id, v interface{}) *gomock.Call {
+func (mr *MockStoreRepositoryMockRecorder) DeleteOne(id, version interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOne", reflect.TypeOf((*MockStoreRepository)(nil).DeleteOne), id, v)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOne", reflect.TypeOf((*MockStoreRepository)(nil).DeleteOne), id, version)
 }
 
 // Mockreader is a mock of reader interface
@@ -423,86 +424,41 @@ func (m *Mockwriter) EXPECT() *MockwriterMockRecorder {
 }
 
 // Create mocks base method
-func (m *Mockwriter) Create(p CreateProductDTO) (entity.ID, entity.Version, []string) {
+func (m *Mockwriter) Create(createVariantDTO variant.CreateVariantDTO) (entity.ID, int32, []entity.ClientError) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", p)
+	ret := m.ctrl.Call(m, "Create", createVariantDTO)
 	ret0, _ := ret[0].(entity.ID)
-	ret1, _ := ret[1].(entity.Version)
-	ret2, _ := ret[2].([]string)
+	ret1, _ := ret[1].(int32)
+	ret2, _ := ret[2].([]entity.ClientError)
 	return ret0, ret1, ret2
 }
 
 // Create indicates an expected call of Create
-func (mr *MockwriterMockRecorder) Create(p interface{}) *gomock.Call {
+func (mr *MockwriterMockRecorder) Create(createVariantDTO interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*Mockwriter)(nil).Create), p)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*Mockwriter)(nil).Create), createVariantDTO)
 }
 
 // UpdateOne mocks base method
-func (m *Mockwriter) UpdateOne(id entity.ID, v int32, updateProductDTO UpdateProductDTO) (int32, []string) {
+func (m *Mockwriter) UpdateOne(id entity.ID, version int32, updateVariantDTO variant.UpdateVariantDTO) (int32, []entity.ClientError) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOne", id, v, updateProductDTO)
+	ret := m.ctrl.Call(m, "UpdateOne", id, version, updateVariantDTO)
 	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].([]string)
+	ret1, _ := ret[1].([]entity.ClientError)
 	return ret0, ret1
 }
 
 // UpdateOne indicates an expected call of UpdateOne
-func (mr *MockwriterMockRecorder) UpdateOne(id, v, updateProductDTO interface{}) *gomock.Call {
+func (mr *MockwriterMockRecorder) UpdateOne(id, version, updateVariantDTO interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*Mockwriter)(nil).UpdateOne), id, v, updateProductDTO)
-}
-
-// Publish mocks base method
-func (m *Mockwriter) Publish(id entity.ID, version int32) (int32, []string) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Publish", id, version)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].([]string)
-	return ret0, ret1
-}
-
-// Publish indicates an expected call of Publish
-func (mr *MockwriterMockRecorder) Publish(id, version interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*Mockwriter)(nil).Publish), id, version)
-}
-
-// Unpublish mocks base method
-func (m *Mockwriter) Unpublish(id entity.ID, version int32) (int32, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Unpublish", id, version)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Unpublish indicates an expected call of Unpublish
-func (mr *MockwriterMockRecorder) Unpublish(id, version interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unpublish", reflect.TypeOf((*Mockwriter)(nil).Unpublish), id, version)
-}
-
-// UpdatePrice mocks base method
-func (m *Mockwriter) UpdatePrice(id entity.ID, version int32, price int) (int32, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdatePrice", id, version, price)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdatePrice indicates an expected call of UpdatePrice
-func (mr *MockwriterMockRecorder) UpdatePrice(id, version, price interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePrice", reflect.TypeOf((*Mockwriter)(nil).UpdatePrice), id, version, price)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*Mockwriter)(nil).UpdateOne), id, version, updateVariantDTO)
 }
 
 // Delete mocks base method
-func (m *Mockwriter) Delete(id entity.ID, version int32) error {
+func (m *Mockwriter) Delete(id entity.ID, version int32) *entity.ClientError {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", id, version)
-	ret0, _ := ret[0].(error)
+	ret0, _ := ret[0].(*entity.ClientError)
 	return ret0
 }
 
@@ -536,86 +492,41 @@ func (m *MockUseCase) EXPECT() *MockUseCaseMockRecorder {
 }
 
 // Create mocks base method
-func (m *MockUseCase) Create(p CreateProductDTO) (entity.ID, entity.Version, []string) {
+func (m *MockUseCase) Create(createVariantDTO variant.CreateVariantDTO) (entity.ID, int32, []entity.ClientError) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", p)
+	ret := m.ctrl.Call(m, "Create", createVariantDTO)
 	ret0, _ := ret[0].(entity.ID)
-	ret1, _ := ret[1].(entity.Version)
-	ret2, _ := ret[2].([]string)
+	ret1, _ := ret[1].(int32)
+	ret2, _ := ret[2].([]entity.ClientError)
 	return ret0, ret1, ret2
 }
 
 // Create indicates an expected call of Create
-func (mr *MockUseCaseMockRecorder) Create(p interface{}) *gomock.Call {
+func (mr *MockUseCaseMockRecorder) Create(createVariantDTO interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUseCase)(nil).Create), p)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUseCase)(nil).Create), createVariantDTO)
 }
 
 // UpdateOne mocks base method
-func (m *MockUseCase) UpdateOne(id entity.ID, v int32, updateProductDTO UpdateProductDTO) (int32, []string) {
+func (m *MockUseCase) UpdateOne(id entity.ID, version int32, updateVariantDTO variant.UpdateVariantDTO) (int32, []entity.ClientError) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOne", id, v, updateProductDTO)
+	ret := m.ctrl.Call(m, "UpdateOne", id, version, updateVariantDTO)
 	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].([]string)
+	ret1, _ := ret[1].([]entity.ClientError)
 	return ret0, ret1
 }
 
 // UpdateOne indicates an expected call of UpdateOne
-func (mr *MockUseCaseMockRecorder) UpdateOne(id, v, updateProductDTO interface{}) *gomock.Call {
+func (mr *MockUseCaseMockRecorder) UpdateOne(id, version, updateVariantDTO interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockUseCase)(nil).UpdateOne), id, v, updateProductDTO)
-}
-
-// Publish mocks base method
-func (m *MockUseCase) Publish(id entity.ID, version int32) (int32, []string) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Publish", id, version)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].([]string)
-	return ret0, ret1
-}
-
-// Publish indicates an expected call of Publish
-func (mr *MockUseCaseMockRecorder) Publish(id, version interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockUseCase)(nil).Publish), id, version)
-}
-
-// Unpublish mocks base method
-func (m *MockUseCase) Unpublish(id entity.ID, version int32) (int32, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Unpublish", id, version)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Unpublish indicates an expected call of Unpublish
-func (mr *MockUseCaseMockRecorder) Unpublish(id, version interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unpublish", reflect.TypeOf((*MockUseCase)(nil).Unpublish), id, version)
-}
-
-// UpdatePrice mocks base method
-func (m *MockUseCase) UpdatePrice(id entity.ID, version int32, price int) (int32, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdatePrice", id, version, price)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdatePrice indicates an expected call of UpdatePrice
-func (mr *MockUseCaseMockRecorder) UpdatePrice(id, version, price interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePrice", reflect.TypeOf((*MockUseCase)(nil).UpdatePrice), id, version, price)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockUseCase)(nil).UpdateOne), id, version, updateVariantDTO)
 }
 
 // Delete mocks base method
-func (m *MockUseCase) Delete(id entity.ID, version int32) error {
+func (m *MockUseCase) Delete(id entity.ID, version int32) *entity.ClientError {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", id, version)
-	ret0, _ := ret[0].(error)
+	ret0, _ := ret[0].(*entity.ClientError)
 	return ret0
 }
 
