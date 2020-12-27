@@ -24,8 +24,9 @@ func TestCreate(t *testing.T) {
 	// Timestamp := time.Now()
 
 	cp := CreateProductDTO{
-		Name:  "Test Product",
-		Price: 20,
+		Name:   "Test Product",
+		Price:  20,
+		Seller: "test",
 	}
 
 	// p := &entity.Product{

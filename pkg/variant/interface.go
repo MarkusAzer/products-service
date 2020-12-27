@@ -1,4 +1,4 @@
-//go:generate mockgen -source interface.go -destination variant_mock.go -package product
+//go:generate mockgen -source interface.go -destination variant_mock.go -package variant
 
 package variant
 
