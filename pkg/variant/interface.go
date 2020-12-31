@@ -46,9 +46,9 @@ type reader interface {
 
 //Writer interface
 type writer interface {
-	Create(createVariantDTO CreateVariantDTO) (entity.ID, int32, []entity.ClientError)
-	UpdateOne(id entity.ID, version int32, updateVariantDTO UpdateVariantDTO) (int32, []entity.ClientError)
-	Delete(id entity.ID, version int32) *entity.ClientError
+	Create(createVariantDTO CreateVariantDTO) (*entity.ID, *int32, *entity.Error)
+	UpdateOne(id entity.ID, version int32, updateVariantDTO UpdateVariantDTO) (*int32, *entity.Error)
+	Delete(id entity.ID, version int32) *entity.Error
 }
 
 //UseCase use case interface

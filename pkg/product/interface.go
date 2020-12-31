@@ -46,12 +46,9 @@ type reader interface {
 
 //Writer interface
 type writer interface {
-	Create(p CreateProductDTO) (entity.ID, entity.Version, []string)
-	UpdateOne(id entity.ID, v int32, updateProductDTO UpdateProductDTO) (int32, []string)
-	Publish(id entity.ID, version int32) (int32, []string)
-	Unpublish(id entity.ID, version int32) (int32, error)
-	UpdatePrice(id entity.ID, version int32, price int) (int32, error)
-	Delete(id entity.ID, version int32) error
+	Create(createProductDTO CreateProductDTO) (*entity.ID, *entity.Version, *entity.Error)
+	UpdateOne(id entity.ID, v int32, updateProductDTO UpdateProductDTO) (*int32, *entity.Error)
+	Delete(id entity.ID, version int32) *entity.Error
 }
 
 //UseCase use case interface

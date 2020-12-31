@@ -2,11 +2,8 @@ package handler
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
-	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/markus-azer/products-service/pkg/entity"
@@ -22,45 +19,25 @@ func createVariant(service variant.UseCase) http.Handler {
 
 		err := dec.Decode(&variant)
 
-		switch {
-		case err == io.EOF:
-			payload, _ := json.Marshal(&Response{Errors: []string{"Provide valid Body"}, Successful: false})
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(payload)
-			return
-		case err != nil && strings.Contains(err.Error(), "json: unknown field"):
-			m := regexp.MustCompile(`\"(.*)\"`)
-			field := m.FindString(err.Error())
-
-			payload, _ := json.Marshal(&Response{Errors: []string{field + " : Not Allowed"}, Successful: false})
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(payload)
-			return
-		case err != nil:
-			payload, _ := json.Marshal(&Response{Errors: []string{"Provide valid Body"}, Successful: false})
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(payload)
+		if err != nil {
+			payload := serializationErrorHandler(err)
+			w.WriteHeader(payload.StatusCode)
+			json.NewEncoder(w).Encode(payload)
 			return
 		}
 
-		ID, v, errs := service.Create(variant)
+		ID, v, err := service.Create(variant)
 
-		if len(errs) > 0 {
-			var errsString = []string{}
-			for _, i := range errs {
-				j := string(i)
-				errsString = append(errsString, j)
-			}
-
-			payload, _ := json.Marshal(&Response{Errors: errsString, Successful: false})
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(payload)
+		if err != nil {
+			payload := errorHandler(err)
+			w.WriteHeader(payload.StatusCode)
+			json.NewEncoder(w).Encode(payload)
 			return
 		}
 
-		payload, _ := json.Marshal(&Response{Message: "Created Successfully", Data: map[string]interface{}{"id": ID, "version": v}, Successful: true})
-		w.WriteHeader(http.StatusCreated)
-		w.Write(payload)
+		payload := &response{StatusCode: http.StatusCreated, Message: "Created Successfully", Data: map[string]interface{}{"id": ID, "version": v}, Successful: true}
+		w.WriteHeader(payload.StatusCode)
+		json.NewEncoder(w).Encode(payload)
 	})
 }
 
@@ -69,11 +46,11 @@ func updateVariant(service variant.UseCase) http.Handler {
 
 		vars := mux.Vars(r)
 		ID := entity.ID(vars["id"])
-		version, err := strconv.Atoi(vars["version"])
+		version, err := strconv.ParseInt(vars["version"], 0, 8)
 		if err != nil {
-			payload, _ := json.Marshal(&Response{Errors: []string{"Internal Server Error"}, Successful: false})
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(payload)
+			payload := &response{StatusCode: 500, Message: "Internal Service Error", Successful: false}
+			w.WriteHeader(payload.StatusCode)
+			json.NewEncoder(w).Encode(payload)
 			return
 		}
 
@@ -83,44 +60,25 @@ func updateVariant(service variant.UseCase) http.Handler {
 
 		err = dec.Decode(&variant)
 
-		switch {
-		case err == io.EOF:
-			payload, _ := json.Marshal(&Response{Errors: []string{"Provide valid Body"}, Successful: false})
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(payload)
-			return
-		case err != nil && strings.Contains(err.Error(), "json: unknown field"):
-			m := regexp.MustCompile(`\"(.*)\"`)
-			field := m.FindString(err.Error())
-
-			payload, _ := json.Marshal(&Response{Errors: []string{field + " : Not Allowed"}, Successful: false})
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(payload)
-			return
-		case err != nil:
-			payload, _ := json.Marshal(&Response{Errors: []string{"Provide valid Body"}, Successful: false})
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(payload)
+		if err != nil {
+			payload := serializationErrorHandler(err)
+			w.WriteHeader(payload.StatusCode)
+			json.NewEncoder(w).Encode(payload)
 			return
 		}
 
-		v, errs := service.UpdateOne(ID, int32(version), variant)
+		v, err := service.UpdateOne(ID, int32(version), variant)
 
-		if len(errs) > 0 {
-			var errsString = []string{}
-			for _, i := range errs {
-				j := string(i)
-				errsString = append(errsString, j)
-			}
-			payload, _ := json.Marshal(&Response{Errors: errsString, Successful: false})
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(payload)
+		if err != nil {
+			payload := errorHandler(err)
+			w.WriteHeader(payload.StatusCode)
+			json.NewEncoder(w).Encode(payload)
 			return
 		}
 
-		payload, _ := json.Marshal(&Response{Message: "Updated Successfully", Data: map[string]interface{}{"id": ID, "version": v}, Successful: true})
-		w.WriteHeader(http.StatusAccepted)
-		w.Write(payload)
+		payload := &response{StatusCode: http.StatusAccepted, Message: "Updated Successfully", Data: map[string]interface{}{"id": ID, "version": v}, Successful: true}
+		w.WriteHeader(payload.StatusCode)
+		json.NewEncoder(w).Encode(payload)
 	})
 }
 
@@ -128,25 +86,25 @@ func deleteVariant(service variant.UseCase) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		id := entity.ID(vars["id"])
-		version, err := strconv.Atoi(vars["version"])
+		version, err := strconv.ParseInt(vars["version"], 0, 8)
 		if err != nil {
-			payload, _ := json.Marshal(&Response{Errors: []string{"Provide Valid version value"}, Successful: false})
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(payload)
+			payload := &response{StatusCode: 500, Message: "Internal Service Error", Successful: false}
+			w.WriteHeader(payload.StatusCode)
+			json.NewEncoder(w).Encode(payload)
 			return
 		}
 
-		clientErr := service.Delete(id, int32(version))
-		if clientErr != nil {
-			payload, _ := json.Marshal(&Response{Errors: []string{string(*clientErr)}, Successful: false})
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(payload)
+		err = service.Delete(id, int32(version))
+		if err != nil {
+			payload := errorHandler(err)
+			w.WriteHeader(payload.StatusCode)
+			json.NewEncoder(w).Encode(payload)
 			return
 		}
 
-		payload, _ := json.Marshal(&Response{Message: "Deleted Successfully", Data: map[string]interface{}{}, Successful: true})
-		w.WriteHeader(http.StatusAccepted)
-		w.Write(payload)
+		payload := &response{StatusCode: http.StatusAccepted, Message: "Deleted Successfully", Data: map[string]interface{}{}, Successful: true}
+		w.WriteHeader(payload.StatusCode)
+		json.NewEncoder(w).Encode(payload)
 	})
 }
 

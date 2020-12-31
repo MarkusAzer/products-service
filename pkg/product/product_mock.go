@@ -423,27 +423,27 @@ func (m *Mockwriter) EXPECT() *MockwriterMockRecorder {
 }
 
 // Create mocks base method
-func (m *Mockwriter) Create(p CreateProductDTO) (entity.ID, entity.Version, []string) {
+func (m *Mockwriter) Create(createProductDTO CreateProductDTO) (*entity.ID, *entity.Version, *entity.Error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", p)
-	ret0, _ := ret[0].(entity.ID)
-	ret1, _ := ret[1].(entity.Version)
-	ret2, _ := ret[2].([]string)
+	ret := m.ctrl.Call(m, "Create", createProductDTO)
+	ret0, _ := ret[0].(*entity.ID)
+	ret1, _ := ret[1].(*entity.Version)
+	ret2, _ := ret[2].(*entity.Error)
 	return ret0, ret1, ret2
 }
 
 // Create indicates an expected call of Create
-func (mr *MockwriterMockRecorder) Create(p interface{}) *gomock.Call {
+func (mr *MockwriterMockRecorder) Create(createProductDTO interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*Mockwriter)(nil).Create), p)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*Mockwriter)(nil).Create), createProductDTO)
 }
 
 // UpdateOne mocks base method
-func (m *Mockwriter) UpdateOne(id entity.ID, v int32, updateProductDTO UpdateProductDTO) (int32, []string) {
+func (m *Mockwriter) UpdateOne(id entity.ID, v int32, updateProductDTO UpdateProductDTO) (*int32, *entity.Error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateOne", id, v, updateProductDTO)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].([]string)
+	ret0, _ := ret[0].(*int32)
+	ret1, _ := ret[1].(*entity.Error)
 	return ret0, ret1
 }
 
@@ -453,56 +453,11 @@ func (mr *MockwriterMockRecorder) UpdateOne(id, v, updateProductDTO interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*Mockwriter)(nil).UpdateOne), id, v, updateProductDTO)
 }
 
-// Publish mocks base method
-func (m *Mockwriter) Publish(id entity.ID, version int32) (int32, []string) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Publish", id, version)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].([]string)
-	return ret0, ret1
-}
-
-// Publish indicates an expected call of Publish
-func (mr *MockwriterMockRecorder) Publish(id, version interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*Mockwriter)(nil).Publish), id, version)
-}
-
-// Unpublish mocks base method
-func (m *Mockwriter) Unpublish(id entity.ID, version int32) (int32, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Unpublish", id, version)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Unpublish indicates an expected call of Unpublish
-func (mr *MockwriterMockRecorder) Unpublish(id, version interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unpublish", reflect.TypeOf((*Mockwriter)(nil).Unpublish), id, version)
-}
-
-// UpdatePrice mocks base method
-func (m *Mockwriter) UpdatePrice(id entity.ID, version int32, price int) (int32, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdatePrice", id, version, price)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdatePrice indicates an expected call of UpdatePrice
-func (mr *MockwriterMockRecorder) UpdatePrice(id, version, price interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePrice", reflect.TypeOf((*Mockwriter)(nil).UpdatePrice), id, version, price)
-}
-
 // Delete mocks base method
-func (m *Mockwriter) Delete(id entity.ID, version int32) error {
+func (m *Mockwriter) Delete(id entity.ID, version int32) *entity.Error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", id, version)
-	ret0, _ := ret[0].(error)
+	ret0, _ := ret[0].(*entity.Error)
 	return ret0
 }
 
@@ -536,27 +491,27 @@ func (m *MockUseCase) EXPECT() *MockUseCaseMockRecorder {
 }
 
 // Create mocks base method
-func (m *MockUseCase) Create(p CreateProductDTO) (entity.ID, entity.Version, []string) {
+func (m *MockUseCase) Create(createProductDTO CreateProductDTO) (*entity.ID, *entity.Version, *entity.Error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", p)
-	ret0, _ := ret[0].(entity.ID)
-	ret1, _ := ret[1].(entity.Version)
-	ret2, _ := ret[2].([]string)
+	ret := m.ctrl.Call(m, "Create", createProductDTO)
+	ret0, _ := ret[0].(*entity.ID)
+	ret1, _ := ret[1].(*entity.Version)
+	ret2, _ := ret[2].(*entity.Error)
 	return ret0, ret1, ret2
 }
 
 // Create indicates an expected call of Create
-func (mr *MockUseCaseMockRecorder) Create(p interface{}) *gomock.Call {
+func (mr *MockUseCaseMockRecorder) Create(createProductDTO interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUseCase)(nil).Create), p)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUseCase)(nil).Create), createProductDTO)
 }
 
 // UpdateOne mocks base method
-func (m *MockUseCase) UpdateOne(id entity.ID, v int32, updateProductDTO UpdateProductDTO) (int32, []string) {
+func (m *MockUseCase) UpdateOne(id entity.ID, v int32, updateProductDTO UpdateProductDTO) (*int32, *entity.Error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateOne", id, v, updateProductDTO)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].([]string)
+	ret0, _ := ret[0].(*int32)
+	ret1, _ := ret[1].(*entity.Error)
 	return ret0, ret1
 }
 
@@ -566,56 +521,11 @@ func (mr *MockUseCaseMockRecorder) UpdateOne(id, v, updateProductDTO interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockUseCase)(nil).UpdateOne), id, v, updateProductDTO)
 }
 
-// Publish mocks base method
-func (m *MockUseCase) Publish(id entity.ID, version int32) (int32, []string) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Publish", id, version)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].([]string)
-	return ret0, ret1
-}
-
-// Publish indicates an expected call of Publish
-func (mr *MockUseCaseMockRecorder) Publish(id, version interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockUseCase)(nil).Publish), id, version)
-}
-
-// Unpublish mocks base method
-func (m *MockUseCase) Unpublish(id entity.ID, version int32) (int32, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Unpublish", id, version)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Unpublish indicates an expected call of Unpublish
-func (mr *MockUseCaseMockRecorder) Unpublish(id, version interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unpublish", reflect.TypeOf((*MockUseCase)(nil).Unpublish), id, version)
-}
-
-// UpdatePrice mocks base method
-func (m *MockUseCase) UpdatePrice(id entity.ID, version int32, price int) (int32, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdatePrice", id, version, price)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdatePrice indicates an expected call of UpdatePrice
-func (mr *MockUseCaseMockRecorder) UpdatePrice(id, version, price interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePrice", reflect.TypeOf((*MockUseCase)(nil).UpdatePrice), id, version, price)
-}
-
 // Delete mocks base method
-func (m *MockUseCase) Delete(id entity.ID, version int32) error {
+func (m *MockUseCase) Delete(id entity.ID, version int32) *entity.Error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", id, version)
-	ret0, _ := ret[0].(error)
+	ret0, _ := ret[0].(*entity.Error)
 	return ret0
 }
 

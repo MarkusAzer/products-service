@@ -10,6 +10,7 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/markus-azer/products-service/pkg/entity"
 	"github.com/markus-azer/products-service/pkg/product"
+	"github.com/sirupsen/logrus"
 )
 
 //Service service interface
@@ -39,24 +40,24 @@ type CreateVariantDTO struct {
 }
 
 //Create new variant
-func (s *Service) Create(createVariantDTO CreateVariantDTO) (entity.ID, int32, []entity.ClientError) {
+func (s *Service) Create(createVariantDTO CreateVariantDTO) (*entity.ID, *int32, *entity.Error) {
 
 	//Validate DTOs, Terminate the Create process if the input is not valid
 	if err := validator.New().Struct(createVariantDTO); err != nil {
-		var errs []entity.ClientError
+		errs := entity.Error{Op: "Create", Kind: entity.ValidationFailed, ErrorMessage: "Provide valid Payload", Severity: logrus.InfoLevel}
 
 		for _, e := range err.(validator.ValidationErrors) {
-			errs = append(errs, entity.ClientError(e.Field()+" : "+fmt.Sprint(e)))
+			errs.Errors = append(errs.Errors, entity.ErrorField{Field: e.Field(), Error: fmt.Sprint(e)})
 		}
 
-		return "", 1, errs
+		return nil, nil, &errs
 	}
 
 	ID := entity.NewID()
 	Timestamp := time.Now()
 
 	//Loop through the struct to generate events and validate
-	var errs []entity.ClientError
+	errs := entity.Error{Op: "Create", Kind: entity.ValidationFailed, ErrorMessage: "Provide valid Payload", Severity: logrus.InfoLevel}
 	var messages []*entity.Message
 	var version entity.Version = 1
 
@@ -84,6 +85,7 @@ func (s *Service) Create(createVariantDTO CreateVariantDTO) (entity.ID, int32, [
 	num := fields.NumField()
 
 	for i := 0; i < num; i++ {
+		fieldName := fields.Field(i).Name
 		field := fields.Field(i)
 		value := values.Field(i)
 
@@ -92,25 +94,25 @@ func (s *Service) Create(createVariantDTO CreateVariantDTO) (entity.ID, int32, [
 			_, err := s.productRepo.FindOneByID(entity.ID(value.String()))
 			switch err {
 			case entity.ErrNotFound:
-				errs = append(errs, entity.ClientError("Product with ID "+value.String()+" doesnt Exist"))
+				errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Product with ID " + value.String() + " doesn't Exist"})
 			default:
 				if err != nil {
-					return "", 0, []entity.ClientError{"Internal Server Error"}
+					return nil, nil, &entity.Error{Op: "Create", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 				}
 			}
 
 		case "Attributes":
 			duplicatedVariant, err := s.storeRepo.FindOneByAttribute(createVariantDTO.Product, createVariantDTO.Attributes)
 			if err != entity.ErrNotFound && err != nil {
-				return "", 0, []entity.ClientError{"Internal Server Error"}
+				return nil, nil, &entity.Error{Op: "Create", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 			}
 
 			if duplicatedVariant != nil {
-				errs = append(errs, entity.ClientError("Variant Attributes Duplication with ID "+string(duplicatedVariant.ID)))
+				errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Variant Attributes Duplication with ID " + string(duplicatedVariant.ID)})
 			}
 
 			if len(createVariantDTO.Attributes) > 3 {
-				errs = append(errs, entity.ClientError("Max Attributes is 3"))
+				errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Max Attributes is 3"})
 			}
 		case "SKU":
 			if value.String() != "" {
@@ -172,8 +174,8 @@ func (s *Service) Create(createVariantDTO CreateVariantDTO) (entity.ID, int32, [
 		}
 	}
 
-	if len(errs) >= 1 {
-		return "", 1, errs
+	if len(errs.Errors) >= 1 {
+		return nil, nil, &errs
 	}
 
 	v := &entity.Variant{
@@ -191,17 +193,18 @@ func (s *Service) Create(createVariantDTO CreateVariantDTO) (entity.ID, int32, [
 	c := &entity.Command{AggregateID: string(ID), Type: "CreateVariant", Payload: structs.Map(createVariantDTO), Timestamp: Timestamp}
 	_, err := s.storeRepo.StoreCommand(c)
 	if err != nil {
-		return "", 1, []entity.ClientError{"Internal Server Error"}
+		return nil, nil, &entity.Error{Op: "Create", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 	}
 
 	_, err = s.storeRepo.Create(v)
 	if err != nil {
-		return "", 1, []entity.ClientError{"Internal Server Error"}
+		return nil, nil, &entity.Error{Op: "Create", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 	}
 
 	s.msgRepo.SendMessages(messages)
 
-	return ID, int32(v.Version), nil
+	Version := int32(v.Version)
+	return &ID, &Version, nil
 }
 
 //UpdateVariantDTO update variant DTO
@@ -213,16 +216,16 @@ type UpdateVariantDTO struct {
 }
 
 //UpdateOne product
-func (s *Service) UpdateOne(ID entity.ID, v int32, updateVariantDTO UpdateVariantDTO) (int32, []entity.ClientError) {
+func (s *Service) UpdateOne(ID entity.ID, v int32, updateVariantDTO UpdateVariantDTO) (*int32, *entity.Error) {
 	//Validate DTOs, Terminate the Create process if the input is not valid
 	if err := validator.New().Struct(updateVariantDTO); err != nil {
-		var errs []entity.ClientError
+		errs := entity.Error{Op: "UpdateOne", Kind: entity.ValidationFailed, ErrorMessage: "Provide valid Payload", Severity: logrus.InfoLevel}
 
 		for _, e := range err.(validator.ValidationErrors) {
-			errs = append(errs, entity.ClientError(e.Field()+" : "+fmt.Sprint(e)))
+			errs.Errors = append(errs.Errors, entity.ErrorField{Field: e.Field(), Error: fmt.Sprint(e)})
 		}
 
-		return 0, errs
+		return nil, &errs
 	}
 
 	Timestamp := time.Now()
@@ -231,20 +234,19 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateVariantDTO UpdateVarian
 	variant, err := s.storeRepo.FindOneByID(ID)
 	switch err {
 	case entity.ErrNotFound:
-		e := entity.ClientError("Variant with id " + string(ID) + " Not found")
-		return 0, []entity.ClientError{e}
+		return nil, &entity.Error{Op: "Update", Kind: entity.NotFound, ErrorMessage: entity.ErrorMessage("Variant with id " + string(ID) + " Not found"), Severity: logrus.InfoLevel}
 	default:
 		if err != nil {
-			return 0, []entity.ClientError{"Internal Server Error"}
+			return nil, &entity.Error{Op: "Update", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 		}
 	}
 
 	if version != variant.Version {
-		return 0, []entity.ClientError{"Version conflict"}
+		return nil, &entity.Error{Op: "Update", Kind: entity.ConcurrentModification, ErrorMessage: entity.ErrorMessage("Version conflict"), Severity: logrus.InfoLevel}
 	}
 
 	//Loop through the struct to generate events and validate
-	var errs []entity.ClientError
+	errs := entity.Error{Op: "Create", Kind: entity.ValidationFailed, ErrorMessage: "Provide valid Payload", Severity: logrus.InfoLevel}
 	var messages []*entity.Message
 
 	fields := reflect.TypeOf(updateVariantDTO)
@@ -253,6 +255,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateVariantDTO UpdateVarian
 	num := fields.NumField()
 
 	for i := 0; i < num; i++ {
+		fieldName := fields.Field(i).Name
 		field := fields.Field(i)
 		value := values.Field(i)
 
@@ -260,7 +263,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateVariantDTO UpdateVarian
 		case "SKU":
 			if value.String() != "" {
 				if variant.SKU == updateVariantDTO.SKU {
-					errs = append(errs, "Sku already updated")
+					errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Sku already updated"})
 				}
 				version++
 
@@ -277,7 +280,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateVariantDTO UpdateVarian
 		case "Quantity":
 			if value.String() != "" {
 				if variant.Quantity == updateVariantDTO.Quantity {
-					errs = append(errs, "Quantity already updated")
+					errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Quantity already updated"})
 				}
 				version++
 
@@ -295,7 +298,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateVariantDTO UpdateVarian
 			//TODO: check if image exist and add event to delete other image
 			if value.String() != "" {
 				if variant.Image == updateVariantDTO.Image {
-					errs = append(errs, "Image already updated")
+					errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Image already updated"})
 				}
 				version++
 
@@ -312,7 +315,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateVariantDTO UpdateVarian
 		case "Price":
 			if value.Int() != 0 {
 				if variant.Price == updateVariantDTO.Price {
-					errs = append(errs, "Price already updated")
+					errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Price already updated"})
 				}
 				version++
 
@@ -329,18 +332,18 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateVariantDTO UpdateVarian
 		}
 	}
 
-	if len(errs) > 0 {
-		return 0, errs
+	if len(errs.Errors) > 0 {
+		return nil, &errs
 	}
 
 	if version == variant.Version {
-		return 0, []entity.ClientError{"No Updates Found"}
+		return nil, &entity.Error{Op: "Update", Kind: entity.NoUpdates, ErrorMessage: entity.ErrorMessage("No updates found"), Severity: logrus.InfoLevel}
 	}
 
 	c := &entity.Command{AggregateID: string(ID), Type: "UpdateProduct", Payload: structs.Map(updateVariantDTO), Timestamp: Timestamp}
 	_, err = s.storeRepo.StoreCommand(c)
 	if err != nil {
-		return 0, []entity.ClientError{"Internal Server Error"}
+		return nil, &entity.Error{Op: "Update", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 	}
 
 	up := &entity.UpdateVariant{
@@ -353,21 +356,22 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateVariantDTO UpdateVarian
 
 	updatedNum, err := s.storeRepo.UpdateOne(ID, up, entity.Version(v))
 	if err != nil {
-		return 0, []entity.ClientError{"Internal Server Error"}
+		return nil, &entity.Error{Op: "Update", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 	}
 
 	if updatedNum != 1 {
-		return 0, []entity.ClientError{"Version conflict"}
+		return nil, &entity.Error{Op: "Update", Kind: entity.ConcurrentModification, ErrorMessage: entity.ErrorMessage("Version conflict"), Severity: logrus.InfoLevel}
 	}
 
 	//TODO:handle failure cases
 	s.msgRepo.SendMessages(messages)
 
-	return int32(version), nil
+	Version := int32(version)
+	return &Version, nil
 }
 
 //Delete product
-func (s *Service) Delete(id entity.ID, v int32) *entity.ClientError {
+func (s *Service) Delete(id entity.ID, v int32) *entity.Error {
 	Timestamp := time.Now()
 	version := entity.Version(v)
 
@@ -375,18 +379,16 @@ func (s *Service) Delete(id entity.ID, v int32) *entity.ClientError {
 	p, err := s.storeRepo.FindOneByID(id)
 	switch err {
 	case entity.ErrNotFound:
-		e := entity.ClientError("Variant with id " + string(id) + " Not found")
-		return &e
+		return &entity.Error{Op: "Delete", Kind: entity.NotFound, ErrorMessage: entity.ErrorMessage("Variant with id " + string(id) + " Not found"), Severity: logrus.InfoLevel}
 	default:
 		if err != nil {
-			e := entity.ClientError("Internal Server Error")
-			return &e
+			return &entity.Error{Op: "Delete", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 		}
 	}
 
 	if version != p.Version {
-		e := entity.ClientError("miss matching version")
-		return &e
+		return &entity.Error{Op: "Update", Kind: entity.ConcurrentModification, ErrorMessage: entity.ErrorMessage("Version conflict"), Severity: logrus.InfoLevel}
+
 	}
 
 	c := &entity.Command{AggregateID: string(id), Type: "DeleteVariant", Timestamp: Timestamp}
@@ -394,13 +396,12 @@ func (s *Service) Delete(id entity.ID, v int32) *entity.ClientError {
 
 	updatedNum, err := s.storeRepo.DeleteOne(id, version)
 	if err != nil {
-		e := entity.ClientError("Internal Server Error")
-		return &e
+		return &entity.Error{Op: "Delete", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 	}
 
 	if updatedNum != 1 {
-		e := entity.ClientError("Version conflict")
-		return &e
+		return &entity.Error{Op: "Update", Kind: entity.ConcurrentModification, ErrorMessage: entity.ErrorMessage("Version conflict"), Severity: logrus.InfoLevel}
+
 	}
 
 	version++

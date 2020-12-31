@@ -31,7 +31,8 @@ func TestProductIndex(t *testing.T) {
 		Description: "Test product description",
 	}
 
-	service.EXPECT().Create(p).Return(ID, entity.Version(3), nil)
+	v := entity.Version(3)
+	service.EXPECT().Create(p).Return(&ID, &v, nil)
 	create := create(service)
 
 	ts := httptest.NewServer(create)

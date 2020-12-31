@@ -13,6 +13,7 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/prometheus/client_golang v1.7.0
+	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.4.0
 	go.mongodb.org/mongo-driver v1.3.4
 	gopkg.in/confluentinc/confluent-kafka-go.v1 v1.4.2
