@@ -423,12 +423,12 @@ func (m *Mockwriter) EXPECT() *MockwriterMockRecorder {
 }
 
 // Create mocks base method
-func (m *Mockwriter) Create(createVariantDTO CreateVariantDTO) (entity.ID, int32, []entity.ClientError) {
+func (m *Mockwriter) Create(createVariantDTO CreateVariantDTO) (*entity.ID, *int32, *entity.Error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", createVariantDTO)
-	ret0, _ := ret[0].(entity.ID)
-	ret1, _ := ret[1].(int32)
-	ret2, _ := ret[2].([]entity.ClientError)
+	ret0, _ := ret[0].(*entity.ID)
+	ret1, _ := ret[1].(*int32)
+	ret2, _ := ret[2].(*entity.Error)
 	return ret0, ret1, ret2
 }
 
@@ -439,11 +439,11 @@ func (mr *MockwriterMockRecorder) Create(createVariantDTO interface{}) *gomock.C
 }
 
 // UpdateOne mocks base method
-func (m *Mockwriter) UpdateOne(id entity.ID, version int32, updateVariantDTO UpdateVariantDTO) (int32, []entity.ClientError) {
+func (m *Mockwriter) UpdateOne(id entity.ID, version int32, updateVariantDTO UpdateVariantDTO) (*int32, *entity.Error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateOne", id, version, updateVariantDTO)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].([]entity.ClientError)
+	ret0, _ := ret[0].(*int32)
+	ret1, _ := ret[1].(*entity.Error)
 	return ret0, ret1
 }
 
@@ -454,10 +454,10 @@ func (mr *MockwriterMockRecorder) UpdateOne(id, version, updateVariantDTO interf
 }
 
 // Delete mocks base method
-func (m *Mockwriter) Delete(id entity.ID, version int32) *entity.ClientError {
+func (m *Mockwriter) Delete(id entity.ID, version int32) *entity.Error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", id, version)
-	ret0, _ := ret[0].(*entity.ClientError)
+	ret0, _ := ret[0].(*entity.Error)
 	return ret0
 }
 
@@ -491,12 +491,12 @@ func (m *MockUseCase) EXPECT() *MockUseCaseMockRecorder {
 }
 
 // Create mocks base method
-func (m *MockUseCase) Create(createVariantDTO CreateVariantDTO) (entity.ID, int32, []entity.ClientError) {
+func (m *MockUseCase) Create(createVariantDTO CreateVariantDTO) (*entity.ID, *int32, *entity.Error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", createVariantDTO)
-	ret0, _ := ret[0].(entity.ID)
-	ret1, _ := ret[1].(int32)
-	ret2, _ := ret[2].([]entity.ClientError)
+	ret0, _ := ret[0].(*entity.ID)
+	ret1, _ := ret[1].(*int32)
+	ret2, _ := ret[2].(*entity.Error)
 	return ret0, ret1, ret2
 }
 
@@ -507,11 +507,11 @@ func (mr *MockUseCaseMockRecorder) Create(createVariantDTO interface{}) *gomock.
 }
 
 // UpdateOne mocks base method
-func (m *MockUseCase) UpdateOne(id entity.ID, version int32, updateVariantDTO UpdateVariantDTO) (int32, []entity.ClientError) {
+func (m *MockUseCase) UpdateOne(id entity.ID, version int32, updateVariantDTO UpdateVariantDTO) (*int32, *entity.Error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateOne", id, version, updateVariantDTO)
-	ret0, _ := ret[0].(int32)
-	ret1, _ := ret[1].([]entity.ClientError)
+	ret0, _ := ret[0].(*int32)
+	ret1, _ := ret[1].(*entity.Error)
 	return ret0, ret1
 }
 
@@ -522,10 +522,10 @@ func (mr *MockUseCaseMockRecorder) UpdateOne(id, version, updateVariantDTO inter
 }
 
 // Delete mocks base method
-func (m *MockUseCase) Delete(id entity.ID, version int32) *entity.ClientError {
+func (m *MockUseCase) Delete(id entity.ID, version int32) *entity.Error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", id, version)
-	ret0, _ := ret[0].(*entity.ClientError)
+	ret0, _ := ret[0].(*entity.Error)
 	return ret0
 }
 

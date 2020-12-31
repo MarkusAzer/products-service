@@ -1,7 +1,6 @@
 package product
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -10,7 +9,10 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/markus-azer/products-service/pkg/brand"
 	"github.com/markus-azer/products-service/pkg/entity"
+	"github.com/sirupsen/logrus"
 )
+
+//todo add event generator per resource
 
 // Validation in Application layer
 // In this layer, as validation, we must ensure that domain objects can receive the input. We should reject the input which the domain object can't be received.
@@ -56,24 +58,24 @@ type CreateProductDTO struct {
 }
 
 //Create new product
-func (s *Service) Create(createProductDTO CreateProductDTO) (entity.ID, entity.Version, []string) {
+func (s *Service) Create(createProductDTO CreateProductDTO) (*entity.ID, *entity.Version, *entity.Error) {
 
 	//Validate DTOs, Terminate the Create process if the input is not valid
 	if err := validator.New().Struct(createProductDTO); err != nil {
-		var errs []string
+		var errs []entity.ErrorField
 
 		for _, e := range err.(validator.ValidationErrors) {
-			errs = append(errs, e.Field()+" : "+fmt.Sprint(e))
+			errs = append(errs, entity.ErrorField{Field: e.Field(), Error: fmt.Sprint(e)})
 		}
 
-		return "", 1, errs
+		return nil, nil, &entity.Error{Op: "Create", Kind: entity.ValidationFailed, ErrorMessage: "Validation Failed", Severity: logrus.InfoLevel, Errors: errs}
 	}
 
 	ID := entity.NewID()
 	Timestamp := time.Now()
 
 	//Loop through the struct to generate events and validate
-	var errs []string
+	var errs []entity.ErrorField
 	var messages []*entity.Message
 	var version entity.Version = 1
 
@@ -175,10 +177,10 @@ func (s *Service) Create(createProductDTO CreateProductDTO) (entity.ID, entity.V
 				_, err := s.brandRepo.FindOneByName(value.String())
 				switch err {
 				case entity.ErrNotFound:
-					errs = append(errs, "Brand "+value.String()+" Not found")
+					errs = append(errs, entity.ErrorField{Field: value.String(), Error: "Brand Not found"})
 				default:
 					if err != nil {
-						return "", 1, []string{"Internal Server Error"}
+						return nil, nil, &entity.Error{Op: "Create", Kind: entity.Unexpected, ErrorMessage: "Internal Service Error", Severity: logrus.ErrorLevel, Err: err}
 					}
 				}
 
@@ -224,7 +226,7 @@ func (s *Service) Create(createProductDTO CreateProductDTO) (entity.ID, entity.V
 	}
 
 	if len(errs) >= 1 {
-		return "", 1, errs
+		return nil, nil, &entity.Error{Op: "Create", Kind: entity.ValidationFailed, ErrorMessage: "Validation Failed", Severity: logrus.InfoLevel, Errors: errs}
 	}
 
 	p := &entity.Product{
@@ -253,17 +255,17 @@ func (s *Service) Create(createProductDTO CreateProductDTO) (entity.ID, entity.V
 	c := &entity.Command{AggregateID: string(ID), Type: "CreateProduct", Payload: structs.Map(createProductDTO), Timestamp: Timestamp}
 	_, err := s.storeRepo.StoreCommand(c)
 	if err != nil {
-		return "", 1, []string{"Internal Server Error"}
+		return nil, nil, &entity.Error{Op: "Create", Kind: entity.Unexpected, ErrorMessage: "Internal Service Error", Severity: logrus.ErrorLevel, Err: err}
 	}
 
 	_, err = s.storeRepo.Create(p)
 	if err != nil {
-		return "", 1, []string{"Internal Server Error"}
+		return nil, nil, &entity.Error{Op: "Create", Kind: entity.Unexpected, ErrorMessage: "Internal Service Error", Severity: logrus.ErrorLevel, Err: err}
 	}
 
 	s.msgRepo.SendMessages(messages)
 
-	return ID, p.Version, nil
+	return &ID, &p.Version, nil
 }
 
 //UpdateProductDTO new product DTO
@@ -281,16 +283,16 @@ type UpdateProductDTO struct {
 }
 
 //UpdateOne product
-func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProductDTO) (int32, []string) {
+func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProductDTO) (*int32, *entity.Error) {
 	//Validate DTOs, Terminate the Create process if the input is not valid
 	if err := validator.New().Struct(updateProductDTO); err != nil {
-		var errs []string
+		var errs []entity.ErrorField
 
 		for _, e := range err.(validator.ValidationErrors) {
-			errs = append(errs, e.Field()+" : "+fmt.Sprint(e))
+			errs = append(errs, entity.ErrorField{Field: e.Field(), Error: fmt.Sprint(e)})
 		}
 
-		return 0, errs
+		return nil, &entity.Error{Op: "UpdateOne", Kind: entity.ValidationFailed, ErrorMessage: "Validation Failed", Severity: logrus.InfoLevel, Errors: errs}
 	}
 
 	Timestamp := time.Now()
@@ -299,19 +301,19 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 	p, err := s.storeRepo.FindOneByID(ID)
 	switch err {
 	case entity.ErrNotFound:
-		return 0, []string{"Product with id " + string(ID) + " Not found"}
+		return nil, &entity.Error{Op: "UpdateOne", Kind: entity.NotFound, ErrorMessage: entity.ErrorMessage("Product with id " + string(ID) + " Not found"), Severity: logrus.InfoLevel}
 	default:
 		if err != nil {
-			return 0, []string{"Internal Server Error"}
+			return nil, &entity.Error{Op: "UpdateOne", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 		}
 	}
 
 	if version != p.Version {
-		return 0, []string{"Version conflict"}
+		return nil, &entity.Error{Op: "UpdateOne", Kind: entity.ConcurrentModification, ErrorMessage: entity.ErrorMessage("Version conflict"), Severity: logrus.InfoLevel}
 	}
 
 	//Loop through the struct to generate events and validate
-	var errs []string
+	errs := entity.Error{Op: "UpdateOne", Kind: entity.ValidationFailed, ErrorMessage: "Provide valid Payload", Severity: logrus.InfoLevel}
 	var messages []*entity.Message
 
 	fields := reflect.TypeOf(updateProductDTO)
@@ -320,6 +322,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 	num := fields.NumField()
 
 	for i := 0; i < num; i++ {
+		fieldName := fields.Field(i).Name
 		field := fields.Field(i)
 		value := values.Field(i)
 
@@ -327,7 +330,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 		case "Name":
 			if value.String() != "" {
 				if p.Name == updateProductDTO.Name {
-					errs = append(errs, "Name already updated")
+					errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Name already updated"})
 				}
 				version++
 
@@ -344,7 +347,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 		case "Description":
 			if value.String() != "" {
 				if p.Description == updateProductDTO.Description {
-					errs = append(errs, "Description already updated")
+					errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Description already updated"})
 				}
 				version++
 
@@ -362,7 +365,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 			//TODO: check uniqueness
 			if value.String() != "" {
 				if p.Slug == updateProductDTO.Slug {
-					errs = append(errs, "Slug already updated")
+					errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Slug already updated"})
 				}
 				version++
 
@@ -380,7 +383,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 			//TODO: check if image exist and add event to delete other image
 			if value.String() != "" {
 				if p.Image == updateProductDTO.Image {
-					errs = append(errs, "Image already updated")
+					errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Image already updated"})
 				}
 				version++
 
@@ -397,17 +400,17 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 		case "Brand":
 			if value.String() != "" {
 				if p.Brand == updateProductDTO.Brand {
-					errs = append(errs, "Brand already updated")
+					errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Brand already updated"})
 				}
 				version++
 
 				_, err := s.brandRepo.FindOneByName(value.String())
 				switch err {
 				case entity.ErrNotFound:
-					errs = append(errs, "Brand "+value.String()+" Not found")
+					errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Brand " + value.String() + " Not found"})
 				default:
 					if err != nil {
-						return 0, []string{"Internal Server Error"}
+						return nil, &entity.Error{Op: "UpdateOne", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 					}
 				}
 
@@ -424,7 +427,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 		case "Category":
 			if value.String() != "" {
 				if p.Category == updateProductDTO.Category {
-					errs = append(errs, "Category already updated")
+					errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Category already updated"})
 				}
 				version++
 
@@ -441,7 +444,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 		case "Status":
 			if value.String() != "" {
 				if p.Status == updateProductDTO.Status {
-					errs = append(errs, "Status already updated")
+					errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Status already updated"})
 				}
 				version++
 
@@ -468,7 +471,7 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 		case "Price":
 			if value.Int() != 0 {
 				if p.Price == updateProductDTO.Price {
-					errs = append(errs, "Price already updated")
+					errs.Errors = append(errs.Errors, entity.ErrorField{Field: fieldName, Error: "Price already updated"})
 				}
 				version++
 
@@ -485,18 +488,18 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 		}
 	}
 
-	if len(errs) > 0 {
-		return 0, errs
+	if len(errs.Errors) > 0 {
+		return nil, &errs
 	}
 
 	if version == p.Version {
-		return 0, []string{"No Updates Found"}
+		return nil, &entity.Error{Op: "UpdateOne", Kind: entity.NoUpdates, ErrorMessage: entity.ErrorMessage("No updates found"), Severity: logrus.InfoLevel}
 	}
 
 	c := &entity.Command{AggregateID: string(ID), Type: "UpdateProduct", Payload: structs.Map(updateProductDTO), Timestamp: Timestamp}
 	_, err = s.storeRepo.StoreCommand(c)
 	if err != nil {
-		return 0, []string{"Internal Server Error"}
+		return nil, &entity.Error{Op: "UpdateOne", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 	}
 
 	up := &entity.UpdateProduct{
@@ -513,157 +516,39 @@ func (s *Service) UpdateOne(ID entity.ID, v int32, updateProductDTO UpdateProduc
 
 	updatedNum, err := s.storeRepo.UpdateOneP(ID, up, entity.Version(v))
 	if err != nil {
-		return 0, []string{"Internal Server Error"}
+		return nil, &entity.Error{Op: "UpdateOne", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 	}
 
 	if updatedNum != 1 {
-		return 0, []string{"Version conflict"}
+		return nil, &entity.Error{Op: "UpdateOne", Kind: entity.ConcurrentModification, ErrorMessage: entity.ErrorMessage("Version conflict"), Severity: logrus.InfoLevel}
 	}
 
 	//TODO:handle failure cases
 	s.msgRepo.SendMessages(messages)
 
-	return int32(version), nil
+	Version := int32(version)
+	return &Version, nil
 }
 
-//Publish publish product //** DEPRECATED **//
-func (s *Service) Publish(ID entity.ID, v int32) (int32, []string) {
+//Delete product
+func (s *Service) Delete(ID entity.ID, v int32) *entity.Error {
 	Timestamp := time.Now()
 	version := entity.Version(v)
 
+	//TODO check Transactions
 	p, err := s.storeRepo.FindOneByID(ID)
 	switch err {
 	case entity.ErrNotFound:
-		return 0, []string{"Product with id " + string(ID) + " Not found"}
+		return &entity.Error{Op: "Delete", Kind: entity.NotFound, ErrorMessage: entity.ErrorMessage("Product with id " + string(ID) + " Not found"), Severity: logrus.InfoLevel}
 	default:
 		if err != nil {
-			return 0, []string{"Internal Server Error"}
+			return &entity.Error{Op: "Delete", Kind: entity.Unexpected, ErrorMessage: "Internal Server Error", Severity: logrus.ErrorLevel}
 		}
 	}
 
 	if version != p.Version {
-		return 0, []string{"Version conflict"}
-	}
+		return &entity.Error{Op: "Delete", Kind: entity.ConcurrentModification, ErrorMessage: entity.ErrorMessage("Version conflict"), Severity: logrus.InfoLevel}
 
-	if p.Status == "Publish" {
-		return 0, []string{"Product is already published"}
-	}
-
-	newMap := make(map[string]interface{})
-	newMap["Status"] = "Publish"
-
-	c := &entity.Command{AggregateID: string(ID), Type: "PublishProduct", Payload: newMap, Timestamp: Timestamp}
-	s.storeRepo.StoreCommand(c)
-
-	version++
-
-	//TODO Patch the update
-	p.Status = "Publish"
-	p.Version = version
-	s.storeRepo.UpdateOne(ID, p, version)
-
-	//TODO:handle failure cases
-	m := &entity.Message{ID: string(ID), Type: "PRODUCT_PUBLISHED", Version: version, Payload: newMap, Timestamp: Timestamp}
-	s.msgRepo.SendMessage(m)
-
-	return int32(version), nil
-}
-
-//Unpublish unpublish product //** DEPRECATED **//
-func (s *Service) Unpublish(ID entity.ID, v int32) (int32, error) {
-	Timestamp := time.Now()
-	version := entity.Version(v)
-
-	//TODO check Transactions
-	p, err := s.storeRepo.FindOneByID(ID)
-	if err != nil {
-		fmt.Println(err)
-		return 0, err
-	}
-
-	if version != p.Version {
-		fmt.Println("miss matching version")
-		return 0, errors.New("miss matching version")
-	}
-
-	//TODO: create status map
-	if p.Status == "Unpublish" {
-		fmt.Println("Product is already Unpublish")
-		return 0, errors.New("Product is already Unpublish")
-	}
-
-	newMap := make(map[string]interface{})
-	newMap["Status"] = "Unpublish"
-
-	c := &entity.Command{AggregateID: string(ID), Type: "UnpublishProduct", Payload: newMap, Timestamp: Timestamp}
-	s.storeRepo.StoreCommand(c)
-
-	version++
-
-	//TODO Patch the update
-	p.Status = "Unpublish"
-	p.Version = version
-	s.storeRepo.UpdateOne(ID, p, version)
-
-	//TODO:handle failure cases
-	m := &entity.Message{ID: string(ID), Type: "PRODUCT_UNPUBLISHED", Version: version, Payload: newMap, Timestamp: Timestamp}
-	s.msgRepo.SendMessage(m)
-
-	return int32(version), nil
-}
-
-//UpdatePrice product price //** DEPRECATED **//
-func (s *Service) UpdatePrice(ID entity.ID, v int32, price int) (int32, error) {
-	Timestamp := time.Now()
-	version := entity.Version(v)
-
-	//TODO check Transactions
-	p, err := s.storeRepo.FindOneByID(ID)
-	if err != nil {
-		fmt.Println(err)
-		return 0, err
-	}
-
-	if version != p.Version {
-		fmt.Println("miss matching version")
-		return 0, errors.New("miss matching version")
-	}
-
-	newMap := make(map[string]interface{})
-	newMap["Price"] = price
-
-	c := &entity.Command{AggregateID: string(ID), Type: "UpdateProductPrice", Payload: newMap, Timestamp: Timestamp}
-	s.storeRepo.StoreCommand(c)
-
-	version++
-
-	//TODO Patch the update
-	p.Price = int8(price)
-	p.Version = version
-	s.storeRepo.UpdateOne(ID, p, version)
-
-	//TODO:handle failure cases
-	m := &entity.Message{ID: string(ID), Type: "PRODUCT_PRICE_UPDATED", Version: version, Payload: newMap, Timestamp: Timestamp}
-	s.msgRepo.SendMessage(m)
-
-	return int32(version), nil
-}
-
-//Delete product
-func (s *Service) Delete(ID entity.ID, v int32) error {
-	Timestamp := time.Now()
-	version := entity.Version(v)
-
-	//TODO check Transactions
-	p, err := s.storeRepo.FindOneByID(ID)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	if version != p.Version {
-		fmt.Println("miss matching version")
-		return errors.New("miss matching version")
 	}
 
 	c := &entity.Command{AggregateID: string(ID), Type: "DeleteProduct", Timestamp: Timestamp}

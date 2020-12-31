@@ -55,5 +55,5 @@ func TestCreate(t *testing.T) {
 	id, _, err := service.Create(cp)
 
 	assert.Nil(t, err)
-	assert.True(t, entity.IsValidUUID(string(id)))
+	assert.True(t, entity.IsValidUUID(string(*id)))
 }
