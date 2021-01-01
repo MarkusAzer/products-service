@@ -10,20 +10,21 @@ import (
 )
 
 func getStatusCode(kind entity.Kind) int {
-	switch kind {
-	case entity.NotFound:
-		return http.StatusBadRequest
-	case entity.ValidationFailed:
-		return http.StatusBadRequest
-	case entity.ConcurrentModification:
-		return http.StatusConflict
-	case entity.Unexpected:
-		return http.StatusInternalServerError
-	case entity.NoUpdates:
-		return http.StatusBadRequest
-	default:
-		return http.StatusInternalServerError
+	ErrHTTPStatusMap := map[entity.Kind]int{
+		entity.NotFound:               http.StatusBadRequest,
+		entity.ValidationFailed:       http.StatusBadRequest,
+		entity.ConcurrentModification: http.StatusConflict,
+		entity.Unexpected:             http.StatusInternalServerError,
+		entity.NoUpdates:              http.StatusBadRequest,
 	}
+	code := ErrHTTPStatusMap[kind]
+
+	// If error code is not found then apply a default case
+	if code == 0 {
+		code = http.StatusInternalServerError
+	}
+
+	return code
 }
 func errorHandler(err error) *response {
 
@@ -46,7 +47,7 @@ func serializationErrorHandler(err error) *response {
 		m := regexp.MustCompile(`\"(.*)\"`)
 		field := m.FindString(err.Error())
 		errors := []entity.ErrorField{
-			entity.ErrorField{
+			{
 				Field: field,
 				Error: "Not allowed",
 			},

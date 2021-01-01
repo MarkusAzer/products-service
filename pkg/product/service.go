@@ -80,7 +80,7 @@ func (s *Service) Create(createProductDTO CreateProductDTO) (*entity.ID, *entity
 	var version entity.Version = 1
 
 	payload := make(map[string]interface{})
-	payload["seller"] = createProductDTO.Seller
+	payload["seller"] = createProductDTO.Seller //validate it
 	messages = append(messages, &entity.Message{
 		ID:        string(ID),
 		Type:      "PRODUCT_DRAFT_CREATED",
