@@ -26,7 +26,7 @@ import (
 //https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations
 //http://www.plainionist.net/Implementing-Clean-Architecture-Controller-Presenter/
 
-//TODO struct to map funchttps://stackoverflow.com/questions/23589564/function-for-converting-a-struct-to-map-in-golang
+//TODO struct to map func https://stackoverflow.com/questions/23589564/function-for-converting-a-struct-to-map-in-golang
 
 //Service service interface
 type Service struct {
@@ -58,7 +58,7 @@ type CreateProductDTO struct {
 }
 
 //Create new product
-func (s *Service) Create(createProductDTO CreateProductDTO) (*entity.ID, *entity.Version, *entity.Error) {
+func (s *Service) Create(createProductDTO CreateProductDTO) (*entity.ID, *entity.Version, error) {
 
 	//Validate DTOs, Terminate the Create process if the input is not valid
 	if err := validator.New().Struct(createProductDTO); err != nil {

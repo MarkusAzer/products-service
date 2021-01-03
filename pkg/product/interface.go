@@ -46,7 +46,7 @@ type reader interface {
 
 //Writer interface
 type writer interface {
-	Create(createProductDTO CreateProductDTO) (*entity.ID, *entity.Version, *entity.Error)
+	Create(createProductDTO CreateProductDTO) (*entity.ID, *entity.Version, error)
 	UpdateOne(id entity.ID, v int32, updateProductDTO UpdateProductDTO) (*int32, *entity.Error)
 	Delete(id entity.ID, version int32) *entity.Error
 }

@@ -31,7 +31,6 @@ func create(service product.UseCase) http.Handler {
 		}
 
 		ID, v, err := service.Create(p)
-
 		if err != nil {
 			payload := errorHandler(err)
 			w.WriteHeader(payload.StatusCode)
@@ -115,7 +114,7 @@ func delete(service product.UseCase) http.Handler {
 
 //MakeProductHandlers make url handlers
 func MakeProductHandlers(r *mux.Router, service product.UseCase) {
-	r.Handle("/v1/products/command/create", create(service)).Methods("POST", "OPTIONS").Name("CreateProduct")
-	r.Handle("/v1/products/command/{id}/{version}/update", update(service)).Methods("PATCH", "OPTIONS").Name("UpdateProduct")
-	r.Handle("/v1/products/command/{id}/{version}/delete", delete(service)).Methods("DELETE", "OPTIONS").Name("DeleteProduct")
+	r.Handle("/v1/products", create(service)).Methods("POST", "OPTIONS").Name("CreateProduct")
+	r.Handle("/v1/products/{id}/{version}", update(service)).Methods("PATCH", "OPTIONS").Name("UpdateProduct")
+	r.Handle("/v1/products/{id}/{version}", delete(service)).Methods("DELETE", "OPTIONS").Name("DeleteProduct")
 }
