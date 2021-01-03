@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -14,37 +14,40 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestProductIndex(t *testing.T) {
+func TestCreateProduct(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
+
+	ID := entity.NewID()
+	v := entity.Version(3)
 	service := product.NewMockUseCase(controller)
+	service.EXPECT().Create(gomock.Any()).Return(&ID, &v, nil)
+
+	// test routing
 	r := mux.NewRouter()
 	MakeProductHandlers(r, service)
 	path, err := r.GetRoute("CreateProduct").GetPathTemplate()
 
 	assert.Nil(t, err)
-	assert.Equal(t, "/v1/products/command/create", path)
+	assert.Equal(t, "/v1/products", path)
 
-	ID := entity.NewID()
-	p := product.CreateProductDTO{
-		Name:        "Test product",
-		Description: "Test product description",
-	}
-
-	v := entity.Version(3)
-	service.EXPECT().Create(p).Return(&ID, &v, nil)
-	create := create(service)
-
-	ts := httptest.NewServer(create)
-	defer ts.Close()
-
-	payload := fmt.Sprintf(`{
+	payload := []byte(`{
 		"name": "Test product",
 		"description": "Test product description"
 	  }`)
 
-	_, err = http.Post(ts.URL+"/v1/products/command/create", "application/json", strings.NewReader(payload))
-	// var res *handler.Response
-	// json.NewDecoder(resp.Body).Decode(&res)
-	// assert.Equal(t, true, res.Successful)
+	req, err := http.NewRequest("POST", "localhost:8080/v1/products", bytes.NewBuffer(payload))
+	assert.Nil(t, err)
+	rec := httptest.NewRecorder()
+
+	create(service).ServeHTTP(rec, req)
+
+	res := rec.Result()
+	defer res.Body.Close()
+	assert.Equal(t, http.StatusCreated, res.StatusCode)
+	var resp *response
+	json.NewDecoder(res.Body).Decode(&resp)
+	assert.Equal(t, string(ID), resp.Data["id"])
+	assert.Equal(t, float64(v), resp.Data["version"])
+
 }
