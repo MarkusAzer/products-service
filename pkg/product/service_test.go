@@ -52,12 +52,17 @@ func TestCreate(t *testing.T) {
 	id, v, err = service.Create(invalidCP)
 
 	assert.NotNil(t, err)
-	assert.Equal(t, entity.ValidationFailed, err.Kind)
-	assert.NotNil(t, err.Errors)
-	assert.Equal(t, 1, len(err.Errors))
-	assert.Equal(t, "Name", err.Errors[0].Field)
+	e, ok := err.(*entity.Error)
+
+	// assert.IsType(t, entity.Error, err)
+	assert.Equal(t, true, ok)
+	assert.Equal(t, entity.ValidationFailed, e.Kind)
+	assert.NotNil(t, e.Errors)
+	assert.Equal(t, 1, len(e.Errors))
+	assert.Equal(t, "Name", e.Errors[0].Field)
 	assert.Nil(t, id)
 	assert.Nil(t, v)
+
 }
 
 func TestUpdate(t *testing.T) {

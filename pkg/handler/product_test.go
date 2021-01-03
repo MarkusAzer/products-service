@@ -14,6 +14,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// func TestRouting(t *testing.T) {
+// 	controller := gomock.NewController(t)
+// 	defer controller.Finish()
+
+// 	service := product.NewMockUseCase(controller)
+// 	r := mux.NewRouter()
+// 	MakeProductHandlers(r, service)
+
+// 	srv := httptest.NewServer(r)
+// 	defer srv.Close()
+
+// 	payload := []byte(`{
+// 		"name": "Test product",
+// 		"description": "Test product description"
+// 	  }`)
+// 	res, err := http.Post(fmt.Sprintf("%s/v1/products", srv.URL), "application/json", bytes.NewBuffer(payload))
+// 	if err != nil {
+// 		t.Fatalf("could not sent Post request: %v", err)
+// 	}
+
+// 	var resp *response
+// 	json.NewDecoder(res.Body).Decode(&resp)
+// 	assert.Equal(t, http.StatusCreated, res.StatusCode)
+// 	fmt.Println(resp)
+
+// }
+
 func TestCreateProduct(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
