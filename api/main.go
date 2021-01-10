@@ -10,12 +10,12 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/markus-azer/products-service/api/handler"
+	"github.com/markus-azer/products-service/api/metric"
+	"github.com/markus-azer/products-service/api/middleware"
 	kafkaStore "github.com/markus-azer/products-service/lib/kafka"
 	"github.com/markus-azer/products-service/lib/mongodb"
 	"github.com/markus-azer/products-service/pkg/brand"
-	"github.com/markus-azer/products-service/pkg/handler"
-	"github.com/markus-azer/products-service/pkg/metric"
-	"github.com/markus-azer/products-service/pkg/middleware"
 	"github.com/markus-azer/products-service/pkg/product"
 	"github.com/markus-azer/products-service/pkg/variant"
 )
