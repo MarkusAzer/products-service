@@ -31,7 +31,7 @@ jobs:
         fi
 
     - name: Build
-      run: go build -v .
+      run: go build -v ./api/main.go
 
     - name: Test
       run: |
